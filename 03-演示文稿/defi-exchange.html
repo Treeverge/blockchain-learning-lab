@@ -8,7 +8,7 @@
     <script defer src="../assets/js/amm.js"></script>
     <script defer src="../assets/js/exchange.js"></script>
   </head>
-  <body>
+  <body data-ready="false">
     <header class="site-header">
       <a class="brand" href="../index.html"
         ><span class="brand-mark" aria-hidden="true">▤</span>
@@ -36,13 +36,18 @@
           </div>
         </aside>
       </section>
+      <p id="initialization-status" class="feedback" role="status">
+        正在准备实验，请稍候。
+      </p>
+      <a id="reload-experiment" href="defi-exchange.html" hidden>重新加载实验 →</a>
+      <noscript><p>本实验需要启用 JavaScript。你也可以下载资料，运行 Python 实验。</p></noscript>
       <nav class="steps" aria-label="实验步骤">
-        <button data-step="0" aria-current="step"><span>01</span>先预测</button
-        ><button data-step="1"><span>02</span>做交换</button
-        ><button data-step="2"><span>03</span>比深度</button
-        ><button data-step="3"><span>04</span>查费用</button
-        ><button data-step="4"><span>05</span>变报价</button
-        ><button data-step="5"><span>06</span>讲明白</button>
+        <button data-step="0" aria-current="step" disabled><span>01</span>先预测</button
+        ><button data-step="1" disabled><span>02</span>做交换</button
+        ><button data-step="2" disabled><span>03</span>比深度</button
+        ><button data-step="3" disabled><span>04</span>查费用</button
+        ><button data-step="4" disabled><span>05</span>变报价</button
+        ><button data-step="5" disabled><span>06</span>讲明白</button>
       </nav>
       <section class="lesson-intro">
         <p id="step-label" class="eyebrow">01 / 先预测</p>
@@ -66,9 +71,9 @@
         </div>
         <fieldset class="prediction-options">
           <legend>你觉得会收到多少 B？</legend>
-          <button data-prediction="equal">刚好 100 B</button
-          ><button data-prediction="less">少于 100 B</button
-          ><button data-prediction="more">多于 100 B</button>
+          <button data-prediction="equal" disabled>刚好 100 B</button
+          ><button data-prediction="less" disabled>少于 100 B</button
+          ><button data-prediction="more" disabled>多于 100 B</button>
         </fieldset>
         <p id="prediction-feedback" class="feedback" role="status">
           先选一个答案，接着用实际交易验证。
@@ -361,5 +366,14 @@
       <span>区块链：从技术到信任</span
       ><span>先动手，再理解。所有资产均为教学模拟。</span>
     </footer>
+    <script>
+      setTimeout(function () {
+        if (document.body.dataset.ready !== "true") {
+          document.getElementById("initialization-status").textContent =
+            "实验加载较慢或未能完成。请重新加载，或下载资料后本地打开。";
+          document.getElementById("reload-experiment").hidden = false;
+        }
+      }, 15000);
+    </script>
   </body>
 </html>

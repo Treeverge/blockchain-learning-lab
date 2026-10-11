@@ -331,4 +331,10 @@
   });
   render();
   setStep(0);
+  document.querySelectorAll("[data-step], [data-prediction]").forEach((button) => {
+    button.disabled = false;
+  });
+  document.body.dataset.ready = "true";
+  $("initialization-status").hidden = true;
+  $("reload-experiment").hidden = true;
 })();
