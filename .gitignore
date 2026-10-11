@@ -1,0 +1,14 @@
+node_modules/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+04-六天实战源码/day1-simple-js-blockchain/lib/
+.qa/

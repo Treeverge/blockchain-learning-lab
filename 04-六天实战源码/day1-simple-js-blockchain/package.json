@@ -1,0 +1,22 @@
+{
+  "name": "simple-js-blockchain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest",
+    "build": "babel src/ -d lib/ --ignore '**/*.test.js'",
+    "prepublish": "yarn run build"
+  },
+  "author": "Adrian Li",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-flow": "^6.23.0",
+    "flow-bin": "^0.57.3",
+    "jest": "^21.2.1"
+  },
+  "dependencies": {
+    "crypto-js": "^3.1.9-1"
+  }
+}

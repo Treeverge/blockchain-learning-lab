@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>共识机制演示 · PBFT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+
+:root{
+  --color-bg:        oklch(26% 0.10 252);
+  --color-surface:   oklch(31% 0.09 252);
+  --color-surface2:  oklch(35% 0.08 252);
+  --color-surface3:  oklch(39% 0.07 252);
+  --color-text:      oklch(86% 0.10 85);
+  --color-text-dim:  oklch(68% 0.07 82);
+  --color-accent:    oklch(82% 0.16 86);
+  --color-accent-dim:oklch(70% 0.12 84);
+  --color-accent-glow:oklch(82% 0.16 86 / .55);
+  --color-accent-soft:oklch(82% 0.16 86 / .22);
+  --color-warm:      oklch(76% 0.14 65);
+  --color-danger:    oklch(60% 0.15 22);
+  --color-success:   oklch(66% 0.12 155);
+  --color-info:      oklch(68% 0.12 195);
+  --border-subtle:   oklch(38% 0.06 250);
+  --border-card:     oklch(33% 0.05 248);
+  --font-display:'Sora',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono','Courier New',monospace;
+  --font-body:'PingFang SC','Microsoft YaHei','Hiragino Sans GB',sans-serif;
+  --ease-out:cubic-bezier(0.25,1,0.5,1);
+  --ease-smooth:cubic-bezier(0.22,1,0.36,1);
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;
+}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important}}
+
+body{font-family:var(--font-body);background:var(--color-bg);color:var(--color-text);overflow-x:hidden;line-height:1.75}
+
+#main{position:relative;z-index:1;scroll-snap-type:y mandatory;overflow-y:auto;height:100dvh;scroll-behavior:smooth}
+
+/* ====== PROGRESS BAR ====== */
+#progress-bar{position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;align-items:center}
+#progress-bar .pb-track{width:1px;background:oklch(86% 0.10 85 / .12);border-radius:1px}
+#progress-bar .pb-segments{display:flex;flex-direction:column;position:absolute;inset:0}
+#progress-bar .pb-seg{flex:1;cursor:pointer;position:relative;background:transparent;border:none;outline:none;transition:background .35s var(--ease-out)}
+#progress-bar .pb-seg.active{background:var(--color-accent);box-shadow:0 0 10px var(--color-accent-glow)}
+#progress-bar .pb-seg:hover{background:var(--color-accent-soft)}
+#progress-bar .pb-label{position:absolute;right:18px;top:50%;transform:translateY(-50%);white-space:nowrap;font-family:var(--font-display);font-size:.66rem;font-weight:600;color:var(--color-accent);opacity:0;transition:opacity .3s var(--ease-out);pointer-events:none}
+#progress-bar .pb-seg.active .pb-label{opacity:1}
+
+/* ====== TOP NAV ====== */
+#top-nav{position:fixed;top:0;left:0;right:0;z-index:99;padding:14px 28px;display:flex;align-items:center;gap:10px}
+#top-nav a{font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--color-text-dim);text-decoration:none;transition:color .25s}
+#top-nav a:hover{color:var(--color-accent)}
+#top-nav span{color:var(--color-text-dim);font-size:.8rem}
+
+/* ====== SECTION ====== */
+.section{min-height:100dvh;scroll-snap-align:start;display:flex;align-items:center;justify-content:center;padding:80px 48px 48px;position:relative}
+.section-inner{max-width:1100px;width:100%;margin:0 auto;position:relative;z-index:1}
+
+/* ====== REVEAL ====== */
+.reveal-up{opacity:0}
+.reveal-up.visible{animation:rev-up .65s var(--ease-out) forwards}
+@keyframes rev-up{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+
+/* ====== TYPOGRAPHY ====== */
+h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,1.9rem);letter-spacing:-0.01em;color:var(--color-accent)}
+.section-label{font-family:var(--font-display);font-weight:600;font-size:.76rem;color:var(--color-accent-dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.step-desc{color:var(--color-text-dim);font-size:1rem;line-height:1.75}
+
+/* ====== BUTTONS ====== */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 26px;font-family:var(--font-display);font-weight:600;font-size:.9rem;background:var(--color-accent);color:oklch(24% 0.08 252);border:none;border-radius:var(--radius-sm);cursor:pointer;transition:transform .2s var(--ease-out),box-shadow .2s var(--ease-out)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 4px 28px var(--color-accent-glow)}
+.btn:active{transform:translateY(0)}
+.btn:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+.btn.outline{background:transparent;border:1.5px solid var(--color-accent);color:var(--color-accent)}
+.btn.outline:hover{background:oklch(82% 0.16 86 / .08)}
+.btn.danger{background:var(--color-danger);color:#fff}
+.btn:disabled{opacity:.35;pointer-events:none}
+
+/* ============================================ */
+/* ====== S1: BYZANTINE GENERALS + CRASH ====== */
+/* ============================================ */
+.generals-ring{position:relative;display:flex;align-items:center;justify-content:center;margin:40px 0;min-height:220px}
+.consensus-line{position:absolute;top:50%;left:12%;right:12%;height:2px;transform:translateY(-50%);z-index:0;background:var(--color-accent-dim);transition:all .5s var(--ease-out)}
+.consensus-line::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,var(--color-accent) 50%,transparent 100%);background-size:200% 100%;animation:consensusFlow 2.5s linear infinite;opacity:.8}
+.consensus-line.broken{background:transparent;border-top:2px dashed var(--color-danger)}
+.consensus-line.broken::before{display:none}
+@keyframes consensusFlow{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.generals-row{display:flex;gap:20px;position:relative;z-index:1;flex-wrap:wrap;justify-content:center}
+.generals-row.crash .general{animation:nodeShake .12s ease-in-out 6}
+.generals-row.crash .general.traitor{animation:nodeShakeHard .09s ease-in-out 8}
+@keyframes nodeShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@keyframes nodeShakeHard{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-5px) rotate(-1.5deg)}75%{transform:translateX(5px) rotate(1.5deg)}}
+
+.general{
+  width:110px;text-align:center;padding:16px 10px;border-radius:var(--radius-lg);
+  background:var(--color-surface);border:2px solid var(--color-success);
+  transition:border-color .5s,background .5s,box-shadow .5s;
+}
+.general.traitor{border-color:var(--color-danger);background:oklch(60% 0.15 22 / .06);box-shadow:0 0 16px oklch(60% 0.15 22 / .25)}
+.general .gicon{font-size:2rem;display:block;margin-bottom:4px}
+.general .gname{font-size:.74rem;font-family:var(--font-display);font-weight:600;color:var(--color-text)}
+.general .grole{font-size:.64rem;color:var(--color-text-dim);margin-top:2px}
+.general .gbadge{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:10px;font-size:.64rem;font-family:var(--font-display);font-weight:600;transition:all .3s}
+.general:not(.traitor) .gbadge{color:var(--color-success);background:oklch(66% 0.12 155 / .12)}
+.general.traitor .gbadge{color:var(--color-danger);background:oklch(60% 0.15 22 / .12)}
+
+/* Crash pulse rings */
+.crash-pulse{position:absolute;top:50%;left:50%;width:220px;height:220px;margin:-110px 0 0 -110px;border-radius:50%;border:2px solid var(--color-danger);z-index:2;pointer-events:none;opacity:0;transform:scale(0)}
+.crash-pulse.active{animation:crashPulse 1.6s var(--ease-out) 2}
+@keyframes crashPulse{0%{transform:scale(0);opacity:.7}100%{transform:scale(3);opacity:0}}
+.crash-pulse-2{animation-delay:.3s!important}
+
+/* Consensus lost stamp */
+.crash-stamp{
+  position:absolute;top:50%;left:50%;z-index:3;pointer-events:none;
+  padding:14px 30px;border:3px solid var(--color-danger);border-radius:10px;
+  color:var(--color-danger);font-family:var(--font-display);font-weight:700;font-size:1.05rem;text-align:center;
+  background:oklch(60% 0.15 22 / .1);line-height:1.3;
+  transform:translate(-50%,-50%) rotate(-12deg) scale(0);opacity:0;
+}
+.crash-stamp.active{animation:stampIn .5s var(--ease-out) forwards}
+@keyframes stampIn{
+  0%{transform:translate(-50%,-50%) rotate(-12deg) scale(2.2);opacity:0}
+  60%{transform:translate(-50%,-50%) rotate(-12deg) scale(.88);opacity:1}
+  100%{transform:translate(-50%,-50%) rotate(-12deg) scale(1);opacity:1}
+}
+
+/* Section red vignette on crash */
+#s1::after{content:'';position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 140px oklch(60% 0.15 22 / 0);transition:box-shadow .4s;z-index:0}
+#s1.crash::after{animation:vignetteFlash .9s ease-in-out 2}
+@keyframes vignetteFlash{0%,100%{box-shadow:inset 0 0 140px oklch(60% 0.15 22 / 0)}50%{box-shadow:inset 0 0 140px oklch(60% 0.15 22 / .45)}}
+
+.generals-verdict{padding:14px 24px;border-radius:var(--radius-md);text-align:center;margin:16px auto;max-width:560px;font-family:var(--font-display);font-weight:600;font-size:.92rem;transition:all .4s}
+.generals-verdict.ok{border:1px solid var(--color-success);background:oklch(66% 0.12 155 / .08);color:var(--color-success)}
+.generals-verdict.fail{border:1px solid var(--color-danger);background:oklch(60% 0.15 22 / .06);color:var(--color-danger)}
+
+.slider-row{display:flex;align-items:center;gap:14px;margin:20px 0;flex-wrap:wrap}
+.slider-row label{font-family:var(--font-display);font-weight:600;font-size:.84rem;color:var(--color-text);white-space:nowrap}
+.slider-row input[type=range]{-webkit-appearance:none;appearance:none;width:220px;height:6px;border-radius:3px;background:var(--color-surface3);outline:none}
+.slider-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--color-accent);cursor:pointer;box-shadow:0 0 10px var(--color-accent-glow)}
+.slider-row .slider-val{font-family:var(--font-mono);font-size:1rem;color:var(--color-accent);min-width:20px}
+
+/* ============================================ */
+/* ====== S2/S3: BLOCK CARD =================== */
+/* ============================================ */
+.block-card{background:var(--color-surface);border-radius:var(--radius-lg);padding:24px 28px;border:1.5px dashed var(--color-accent-dim);margin-bottom:20px;transition:border-color .5s,box-shadow .5s,border-style .5s}
+.block-card.confirmed{border-style:solid;border-color:var(--color-success);box-shadow:0 0 28px oklch(66% 0.12 155 / .22)}
+.block-card.rejected{border-style:solid;border-color:var(--color-danger);box-shadow:0 0 28px oklch(60% 0.15 22 / .22)}
+.bc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-card)}
+.bc-num{font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--color-accent)}
+.bc-status{padding:4px 14px;border-radius:12px;font-family:var(--font-display);font-weight:600;font-size:.76rem;transition:all .4s}
+.bc-status.pending{color:var(--color-warm);background:oklch(76% 0.14 65 / .1);border:1px solid oklch(76% 0.14 65 / .3)}
+.bc-status.confirmed{color:var(--color-success);background:oklch(66% 0.12 155 / .1);border:1px solid oklch(66% 0.12 155 / .3)}
+.bc-status.rejected{color:var(--color-danger);background:oklch(60% 0.15 22 / .08);border:1px solid oklch(60% 0.12 22 / .3)}
+.bc-row{display:flex;gap:12px;margin-bottom:8px;font-size:.86rem}
+.bcl{color:var(--color-text-dim);min-width:80px;flex-shrink:0}
+.bcv{color:var(--color-text)}
+.bcv.amount{font-family:var(--font-mono);color:var(--color-accent);font-weight:600}
+.bc-hash-row{display:flex;gap:20px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border-card)}
+.bc-hash-row>div{flex:1}
+.bc-hash{font-family:var(--font-mono);font-size:.7rem;color:var(--color-text-dim);margin-top:2px;word-break:break-all}
+.bc-checks{display:flex;gap:8px;margin-top:14px}
+.bc-check{padding:4px 12px;border-radius:12px;font-size:.68rem;font-family:var(--font-display);font-weight:600;border:1px solid var(--border-subtle);color:var(--color-text-dim);transition:all .3s}
+.bc-check.done{border-color:var(--color-success);color:var(--color-success);background:oklch(66% 0.12 155 / .08)}
+.bc-check.done::before{content:'✓ '}
+
+/* ============================================ */
+/* ====== S2: PBFT FLOW + PHASE EXPLAIN ======= */
+/* ============================================ */
+.pbft-flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:20px 0;flex-wrap:wrap}
+.pbft-phase{padding:14px 22px;border-radius:var(--radius-md);font-family:var(--font-display);font-weight:600;font-size:.82rem;text-align:center;transition:border-color .4s,background .4s,color .4s,box-shadow .4s;border:1.5px solid var(--border-card);background:var(--color-surface);color:var(--color-text-dim);min-width:110px}
+.pbft-phase.active{border-color:var(--color-accent);background:oklch(82% 0.16 86 / .08);color:var(--color-accent);box-shadow:0 0 22px oklch(82% 0.16 86 / .18)}
+.pbft-phase.done{border-color:var(--color-success);color:var(--color-success);background:oklch(66% 0.12 155 / .06)}
+.pbft-arrow{color:var(--color-accent-dim);font-size:1.2rem;flex-shrink:0}
+
+/* Persistent 3-card phase explanation */
+.phase-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0}
+.phase-card{padding:18px 20px;background:var(--color-surface);border-radius:var(--radius-md);border:1.5px solid var(--border-card);transition:border-color .45s,box-shadow .45s,background .45s;position:relative}
+.phase-card.active{border-color:var(--color-accent);box-shadow:0 0 24px oklch(82% 0.16 86 / .16);background:oklch(82% 0.16 86 / .04)}
+.phase-card.done{border-color:var(--color-success)}
+.phase-card .pc-step{font-family:var(--font-mono);font-size:.66rem;color:var(--color-accent-dim);margin-bottom:4px}
+.phase-card .pc-title{font-family:var(--font-display);font-weight:600;font-size:.9rem;color:var(--color-accent);margin-bottom:10px;line-height:1.3}
+.phase-card .pc-body{font-size:.8rem;color:var(--color-text-dim);line-height:1.75}
+.phase-card .pc-body strong{color:var(--color-text)}
+.phase-card .pc-role{display:inline-block;margin-top:10px;padding:3px 10px;border-radius:8px;font-size:.66rem;font-family:var(--font-display);font-weight:600;background:var(--color-surface2);color:var(--color-text-dim)}
+.phase-card.active .pc-role{background:oklch(82% 0.16 86 / .12);color:var(--color-accent)}
+.phase-card.done .pc-role{background:oklch(66% 0.12 155 / .1);color:var(--color-success)}
+.phase-card .pc-check{position:absolute;top:14px;right:16px;font-size:1rem;color:var(--color-success);opacity:0;transform:scale(0);transition:opacity .35s,transform .35s var(--ease-out)}
+.phase-card.done .pc-check{opacity:1;transform:scale(1)}
+
+.vote-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:24px 0}
+.vote-card{position:relative;padding:18px 10px 14px;background:var(--color-surface);border-radius:var(--radius-md);text-align:center;border:1.5px solid var(--border-card);transition:border-color .4s,background .4s,box-shadow .4s}
+.vote-card.voted-yes{border-color:var(--color-success);box-shadow:0 0 16px oklch(66% 0.12 155 / .2)}
+.vote-card.voted-no{border-color:var(--color-danger);box-shadow:0 0 16px oklch(60% 0.15 22 / .2)}
+.vote-card.broadcasting{animation:broadcastPulse .7s var(--ease-out)}
+@keyframes broadcastPulse{0%{box-shadow:0 0 0 0 oklch(82% 0.16 86 / .45)}100%{box-shadow:0 0 0 18px oklch(82% 0.16 86 / 0)}}
+.vote-card .vicon{font-size:1.6rem;display:block;margin-bottom:4px}
+.vote-card .vname{font-size:.72rem;font-family:var(--font-display);font-weight:600;color:var(--color-text)}
+.vote-card .vvote{font-size:.66rem;font-weight:600;margin-top:6px;min-height:18px;line-height:1.4}
+.vote-card .vprimary{position:absolute;top:-9px;left:50%;transform:translateX(-50%);padding:2px 8px;border-radius:8px;font-size:.58rem;font-family:var(--font-display);font-weight:600;color:oklch(24% 0.08 252);background:var(--color-accent);white-space:nowrap}
+
+.result-bar{padding:16px 24px;border-radius:var(--radius-md);text-align:center;font-family:var(--font-display);font-weight:600;font-size:.92rem;margin-top:20px}
+.result-bar.pass{border:1px solid var(--color-success);background:oklch(66% 0.12 155 / .08);color:var(--color-success)}
+.result-bar.reject{border:1px solid var(--color-danger);background:oklch(60% 0.15 22 / .06);color:var(--color-danger)}
+
+/* ====== S3: MALICIOUS ====== */
+.node-toggle-grid{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0;align-items:center}
+.node-toggle{padding:8px 16px;background:var(--color-surface);border:1px solid var(--border-card);border-radius:var(--radius-sm);cursor:pointer;font-size:.82rem;font-family:var(--font-body);color:var(--color-text);transition:border-color .3s,background .3s,color .3s}
+.node-toggle:hover{border-color:var(--color-warm)}
+.node-toggle.rogue{border-color:var(--color-danger);background:oklch(60% 0.15 22 / .12);color:var(--color-danger)}
+
+.info-card{padding:16px 20px;background:var(--color-surface);border-radius:var(--radius-md);border:1px solid var(--border-card);margin:16px 0}
+.info-card p{color:var(--color-text-dim);font-size:.85rem;line-height:1.8}
+
+/* ====== S4: COMPARISON ====== */
+.compare-table{width:100%;border-collapse:collapse;margin:20px 0}
+.compare-table th{font-family:var(--font-display);font-weight:600;font-size:.82rem;color:var(--color-accent);padding:12px 16px;text-align:left;border-bottom:1.5px solid var(--color-accent)}
+.compare-table td{padding:12px 16px;font-size:.84rem;color:var(--color-text-dim);border-bottom:1px solid var(--border-subtle);vertical-align:top}
+.compare-table tr:last-child td{border-bottom:none}
+.compare-table td:first-child{font-family:var(--font-display);font-weight:600;color:var(--color-text)}
+.compare-table tr.hl td{background:oklch(82% 0.16 86 / .06)}
+.compare-table tr.hl td:first-child,.compare-table tr.hl td.hl{color:var(--color-accent)}
+
+/* ====== RESPONSIVE ====== */
+@media(max-width:768px){
+  .section{padding:60px 16px 40px}
+  .generals-row{flex-direction:column;gap:12px}
+  .consensus-line{display:none}
+  .crash-stamp{font-size:.85rem;padding:10px 20px}
+  .vote-grid{grid-template-columns:repeat(3,1fr)}
+  .pbft-flow{flex-direction:column;gap:8px}
+  .pbft-arrow{transform:rotate(90deg)}
+  #progress-bar{right:8px}
+  #progress-bar .pb-label{display:none}
+  #top-nav{padding:10px 16px}
+}
+</style>
+</head>
+<body>
+
+<div id="top-nav">
+  <a href="blockchain-presentation.html#s12">← 返回演示</a>
+  <span>共识机制 · PBFT</span>
+</div>
+
+<nav id="progress-bar" aria-label="步骤进度"></nav>
+
+<main id="main">
+
+<!-- ====== S1: BYZANTINE GENERALS ====== -->
+<section class="section" id="s1">
+  <div class="section-inner">
+    <div class="reveal-up"><p class="section-label">Step 1</p></div>
+    <h2 class="reveal-up">拜占庭将军问题</h2>
+    <p class="step-desc reveal-up">页岩气开发项目中有<strong style="color:var(--color-accent)">5 个参与方</strong>协同作业。如果其中有人故意传递假消息（篡改数据、谎报进度），系统还能达成一致吗？<br>PBFT 的答案：只要叛徒数量 &lt; 总节点数的 1/3，系统就安全；一旦超过，共识崩溃。</p>
+
+    <div class="generals-ring reveal-up">
+      <div class="consensus-line" id="consensusLine"></div>
+      <div class="generals-row" id="generalsRow"></div>
+      <div class="crash-pulse" id="crashPulse"></div>
+      <div class="crash-pulse crash-pulse-2" id="crashPulse2"></div>
+      <div class="crash-stamp" id="crashStamp">共识失败<br>CONSENSUS LOST</div>
+    </div>
+
+    <div class="generals-verdict ok reveal-up" id="verdict">✅ 叛徒 0/5 · 系统安全 · 所有忠诚节点达成一致</div>
+
+    <div class="slider-row reveal-up">
+      <label>拖动增加叛徒数量：</label>
+      <input type="range" id="traitorSlider" min="0" max="3" value="0" oninput="updateTraitors(this.value)" onchange="this.blur()">
+      <span class="slider-val" id="traitorCount">0</span>
+      <span style="font-size:.78rem;color:var(--color-text-dim)" id="traitorNote">（少于 2 个安全）</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== S2: PBFT VOTING ====== -->
+<section class="section" id="s2">
+  <div class="section-inner">
+    <div class="reveal-up"><p class="section-label">Step 2</p></div>
+    <h2 class="reveal-up">PBFT 三阶段投票</h2>
+    <p class="step-desc reveal-up">一笔页岩气作业交易要上链，PBFT 走三个阶段：<strong style="color:var(--color-accent)">Pre-Prepare → Prepare → Commit</strong>。每个阶段都需要 ≥ 2/3 节点同意才推进，最终交易不可逆转。</p>
+
+    <!-- Block preview card -->
+    <div class="block-card reveal-up" id="blockCard">
+      <div class="bc-header">
+        <span class="bc-num">区块 #027</span>
+        <span class="bc-status pending" id="bcStatus">待上链</span>
+      </div>
+      <div class="bc-row"><span class="bcl">工作内容</span><span class="bcv">某区块页岩气井 压裂作业完成，申请进入试气阶段</span></div>
+      <div class="bc-row"><span class="bcl">金额</span><span class="bcv amount">¥1,250,000</span></div>
+      <div class="bc-row"><span class="bcl">经手方</span><span class="bcv">井下作业施工队</span></div>
+      <div class="bc-row"><span class="bcl">作业参数</span><span class="bcv">加砂量 35m³ · 施工压力 58MPa · 排量 12m³/min</span></div>
+      <div class="bc-row"><span class="bcl">时间戳</span><span class="bcv">2024-08-15 14:32 CST</span></div>
+      <div class="bc-hash-row">
+        <div><span class="bcl">数据哈希</span><div class="bc-hash">a3f2c81d9e4b07f6</div></div>
+        <div><span class="bcl">前一哈希</span><div class="bc-hash">9b4e0f2371a8c5d0</div></div>
+      </div>
+      <div class="bc-checks" id="bcChecks">
+        <span class="bc-check" data-phase="0">Pre-Prepare</span>
+        <span class="bc-check" data-phase="1">Prepare</span>
+        <span class="bc-check" data-phase="2">Commit</span>
+      </div>
+    </div>
+
+    <div class="pbft-flow reveal-up" id="pbftFlow">
+      <div class="pbft-phase" id="phPre">Pre-Prepare</div>
+      <span class="pbft-arrow">→</span>
+      <div class="pbft-phase" id="phPrep">Prepare</div>
+      <span class="pbft-arrow">→</span>
+      <div class="pbft-phase" id="phCommit">Commit</div>
+      <span class="pbft-arrow">→</span>
+      <div class="pbft-phase" id="phDone">✅ 上链确认</div>
+    </div>
+
+    <div class="phase-cards reveal-up" id="phaseCards">
+      <div class="phase-card" id="pcard-0">
+        <span class="pc-check">✓</span>
+        <div class="pc-step">阶段 1</div>
+        <div class="pc-title">Pre-Prepare · 预准备</div>
+        <div class="pc-body"><strong>主节点</strong>（本轮为「开发公司」）收到交易请求，为交易分配序号 #027，并向所有副本节点广播提案：「建议将这笔压裂作业交易上链」。<br><strong>作用</strong>：确立提案内容与顺序，防止主节点乱序或伪造。</div>
+        <div class="pc-role" id="prole-0">主节点广播提案</div>
+      </div>
+      <div class="phase-card" id="pcard-1">
+        <span class="pc-check">✓</span>
+        <div class="pc-step">阶段 2</div>
+        <div class="pc-title">Prepare · 准备</div>
+        <div class="pc-body">每个副本节点验证提案无误后，向<strong>所有其他节点</strong>广播 Prepare 消息。每个节点需收集到 ≥ 2/3 节点的 Prepare，才进入「已准备」状态。<br><strong>作用</strong>：确保绝大多数节点看到<strong>同一份</strong>提案，达成有序一致。</div>
+        <div class="pc-role" id="prole-1">各节点互相广播</div>
+      </div>
+      <div class="phase-card" id="pcard-2">
+        <span class="pc-check">✓</span>
+        <div class="pc-step">阶段 3</div>
+        <div class="pc-title">Commit · 提交</div>
+        <div class="pc-body">进入「已准备」的节点再向所有人广播 Commit 消息。收集到 ≥ 2/3 的 Commit 后，交易达到<strong>最终性</strong>——即使主节点此刻宕机，交易也不会回滚。<br><strong>作用</strong>：保证结果不可逆转。</div>
+        <div class="pc-role" id="prole-2">达成不可逆共识</div>
+      </div>
+    </div>
+
+    <div class="reveal-up"><button class="btn" id="btnVote" onclick="startPBFT()">🗳️ 发起 PBFT 投票</button></div>
+
+    <div class="vote-grid reveal-up" id="voteGrid"></div>
+
+    <div class="result-bar reveal-up" id="resultBar" style="display:none"></div>
+  </div>
+</section>
+
+<!-- ====== S3: MALICIOUS ====== -->
+<section class="section" id="s3">
+  <div class="section-inner">
+    <div class="reveal-up"><p class="section-label">Step 3</p></div>
+    <h2 class="reveal-up">作恶节点被拒绝</h2>
+    <p class="step-desc reveal-up">如果有人故意投反对票或篡改数据，PBFT 的容错公式 <strong style="color:var(--color-accent)">N ≥ 3f + 1</strong> 保证：5 个节点最多容忍 1 个作恶。超过 1 个，交易被驳回——区块链不会接受可疑数据。</p>
+
+    <div class="node-toggle-grid reveal-up" id="rogueToggles"></div>
+
+    <div class="reveal-up"><button class="btn" id="btnVote2" onclick="startPBFT2()">🗳️ 重新投票</button></div>
+
+    <div class="vote-grid reveal-up" id="voteGrid2"></div>
+
+    <div class="result-bar reveal-up" id="resultBar2" style="display:none"></div>
+
+    <div class="info-card reveal-up" id="infoCard" style="display:none"></div>
+  </div>
+</section>
+
+<!-- ====== S4: COMPARISON ====== -->
+<section class="section" id="s4">
+  <div class="section-inner">
+    <div class="reveal-up"><p class="section-label">Step 4</p></div>
+    <h2 class="reveal-up">共识机制对比</h2>
+    <p class="step-desc reveal-up">不同类型的区块链采用不同共识。在已知多方协作的工业场景中——能源开发、装备制造、跨境贸易——节点身份明确、对吞吐量和能耗敏感，<strong style="color:var(--color-accent)">PBFT 是工程实践中的主流共识算法</strong>。</p>
+
+    <div class="reveal-up" style="overflow-x:auto">
+      <table class="compare-table">
+        <thead><tr><th>特征</th><th>PoW（工作量证明）</th><th>PoS（权益证明）</th><th class="hl">PBFT（实用拜占庭容错）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>速度</td><td>7 TPS</td><td>~100 TPS</td><td class="hl">数千 TPS</td>
+          </tr>
+          <tr>
+            <td>年能耗</td><td>≈ 阿根廷全国用电</td><td>≈ 一个小镇</td><td class="hl">≈ 一台服务器</td>
+          </tr>
+          <tr>
+            <td>节点身份</td><td>匿名，任何人可加入</td><td>匿名，需质押代币</td><td class="hl">已知，需授权许可</td>
+          </tr>
+          <tr>
+            <td>容错率</td><td>需 &gt;50% 诚实算力</td><td>需 &gt;2/3 诚实质押</td><td class="hl">≥ 2/3 诚实节点（N≥3f+1）</td>
+          </tr>
+          <tr>
+            <td>典型项目</td><td>Bitcoin</td><td>Ethereum 2.0</td><td class="hl">Hyperledger Fabric · 蚂蚁链 · 长安链</td>
+          </tr>
+          <tr class="hl">
+            <td>适用场景</td><td>公链 · 数字货币</td><td>公链 · DeFi</td><td class="hl">联盟链 · 工业协同 · 政务存证</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// ====== NODE DATA (shale gas project participants) ======
+var nodes=[
+  {icon:'🏭',name:'页岩气开发公司',role:'甲方·业主',short:'开发公司'},
+  {icon:'🔧',name:'钻井设备供应商',role:'设备供应',short:'设备商'},
+  {icon:'🚛',name:'压裂材料物流',role:'物流运输',short:'物流方'},
+  {icon:'🏗️',name:'井下作业施工队',role:'施工作业',short:'施工队'},
+  {icon:'🏛️',name:'安监部门',role:'政府监管',short:'安监部门'},
+];
+
+// ====== PHASE CONTENT (now lives in persistent HTML cards) ======
+
+
+var safeLimit=Math.floor((nodes.length-1)/3); // 5 nodes → max 1 traitor
+
+// ====== S1: BYZANTINE GENERALS ======
+function renderGenerals(traitorCount,crash){
+  var row=document.getElementById('generalsRow');
+  row.innerHTML='';
+  var traitors=new Set();
+  for(var i=0;i<traitorCount;i++)traitors.add(nodes.length-1-i);
+
+  nodes.forEach(function(n,i){
+    var isTraitor=traitors.has(i);
+    var badgeText;
+    if(isTraitor){badgeText=crash?'✓ 作恶成功':'⚠ 叛徒';}
+    else{badgeText=crash?'⚠ 无法共识':'✅ 忠诚';}
+    row.innerHTML+=
+      '<div class="general'+(isTraitor?' traitor':'')+'">'+
+        '<span class="gicon">'+n.icon+'</span>'+
+        '<div class="gname">'+n.short+'</div>'+
+        '<div class="grole">'+n.role+'</div>'+
+        '<div class="gbadge">'+badgeText+'</div>'+
+      '</div>';
+  });
+}
+
+function updateTraitors(val){
+  val=parseInt(val);
+  document.getElementById('traitorCount').textContent=val;
+  var crash=val>safeLimit;
+  renderGenerals(val,crash);
+
+  var verdict=document.getElementById('verdict');
+  var note=document.getElementById('traitorNote');
+  var s1=document.getElementById('s1');
+  var line=document.getElementById('consensusLine');
+  var row=document.getElementById('generalsRow');
+  var pulse=document.getElementById('crashPulse');
+  var pulse2=document.getElementById('crashPulse2');
+  var stamp=document.getElementById('crashStamp');
+
+  if(!crash){
+    s1.classList.remove('crash');
+    line.classList.remove('broken');
+    row.classList.remove('crash');
+    pulse.classList.remove('active');
+    pulse2.classList.remove('active');
+    stamp.classList.remove('active');
+    verdict.className='generals-verdict ok';
+    verdict.innerHTML='✅ 叛徒 '+val+'/'+nodes.length+' · 系统安全 · 忠诚节点达成一致（'+(nodes.length-val)+'/'+nodes.length+' ≥ 2/3）';
+    note.textContent='（≤'+safeLimit+' 个安全）';
+  }else{
+    s1.classList.add('crash');
+    line.classList.add('broken');
+    row.classList.add('crash');
+    // restart pulse animations via reflow
+    pulse.classList.remove('active');void pulse.offsetWidth;pulse.classList.add('active');
+    pulse2.classList.remove('active');void pulse2.offsetWidth;pulse2.classList.add('active');
+    stamp.classList.remove('active');void stamp.offsetWidth;stamp.classList.add('active');
+    verdict.className='generals-verdict fail';
+    verdict.innerHTML='❌ 叛徒 '+val+'/'+nodes.length+' · 系统崩溃 · 无法达成 2/3 共识（仅 '+(nodes.length-val)+'/'+nodes.length+' 同意）';
+    note.textContent='（超过'+safeLimit+' 个即不安全！）';
+  }
+}
+
+// ====== VOTE GRID RENDER ======
+function renderVoteGrid(containerId){
+  var grid=document.getElementById(containerId);
+  if(!grid)return;
+  grid.innerHTML='';
+  nodes.forEach(function(n,i){
+    var primaryBadge=i===0?'<div class="vprimary">👑 主节点</div>':'';
+    grid.innerHTML+=
+      '<div class="vote-card" id="vc-'+containerId+'-'+i+'">'+
+        primaryBadge+
+        '<span class="vicon">'+n.icon+'</span>'+
+        '<div class="vname">'+n.short+'</div>'+
+        '<div class="vvote" id="vv-'+containerId+'-'+i+'"></div>'+
+      '</div>';
+  });
+}
+
+// ====== BLOCK CARD STATE ======
+function setBlockState(cardId,statusId,checksId,state){
+  var card=document.getElementById(cardId);
+  var st=document.getElementById(statusId);
+  card.classList.remove('confirmed','rejected');
+  document.querySelectorAll('#'+checksId+' .bc-check').forEach(function(c){c.classList.remove('done')});
+  if(state==='pending'){
+    st.className='bc-status pending';st.textContent='待上链';
+  }else if(state==='confirmed'){
+    card.classList.add('confirmed');
+    st.className='bc-status confirmed';st.textContent='✅ 已上链';
+    document.querySelectorAll('#'+checksId+' .bc-check').forEach(function(c){c.classList.add('done')});
+  }else if(state==='rejected'){
+    card.classList.add('rejected');
+    st.className='bc-status rejected';st.textContent='❌ 已驳回';
+  }
+}
+
+// ====== S2: PBFT THREE-PHASE FLOW ======
+function resetPhaseCards(){
+  for(var i=0;i<3;i++){
+    var c=document.getElementById('pcard-'+i);
+    if(c)c.classList.remove('active','done');
+  }
+}
+function setPhaseCardActive(idx){
+  var c=document.getElementById('pcard-'+idx);
+  if(c)c.classList.add('active');
+}
+function setPhaseCardDone(idx){
+  var c=document.getElementById('pcard-'+idx);
+  if(c){c.classList.remove('active');c.classList.add('done')}
+}
+
+function startPBFT(){
+  var btn=document.getElementById('btnVote');
+  btn.disabled=true;btn.textContent='⏳ 投票进行中...';
+
+  // Reset phases
+  ['phPre','phPrep','phCommit','phDone'].forEach(function(id){
+    document.getElementById(id).className='pbft-phase';
+  });
+  // Reset block card
+  setBlockState('blockCard','bcStatus','bcChecks','pending');
+  // Reset phase cards
+  resetPhaseCards();
+  // Reset result
+  document.getElementById('resultBar').style.display='none';
+  renderVoteGrid('voteGrid');
+
+  var phases=[
+    {ph:'phPre',card:0,check:0,status:function(i){return i===0?'📢 广播提案':'📥 接收中'}},
+    {ph:'phPrep',card:1,check:1,status:function(){return '📨 已广播 Prepare'}},
+    {ph:'phCommit',card:2,check:2,status:function(){return '🔒 已提交'}},
+  ];
+
+  function runPhase(pi){
+    if(pi>=phases.length){
+      // Finalize
+      document.getElementById('phDone').classList.add('done');
+      setBlockState('blockCard','bcStatus','bcChecks','confirmed');
+      // Final node status
+      nodes.forEach(function(n,i){
+        var voteEl=document.getElementById('vv-voteGrid-'+i);
+        if(voteEl)voteEl.textContent='✅ 已确认';
+      });
+      showResult('voteGrid','resultBar',nodes.length);
+      btn.disabled=false;btn.textContent='🗳️ 重新投票';
+      btn.blur();
+      return;
+    }
+
+    var p=phases[pi];
+    document.getElementById(p.ph).classList.add('active');
+    setPhaseCardActive(p.card);
+
+    // Each node broadcasts + votes
+    nodes.forEach(function(n,i){
+      setTimeout(function(){
+        var card=document.getElementById('vc-voteGrid-'+i);
+        var voteEl=document.getElementById('vv-voteGrid-'+i);
+        card.classList.remove('broadcasting');void card.offsetWidth;
+        card.classList.add('broadcasting','voted-yes');
+        voteEl.textContent=p.status(i);
+      },i*320);
+    });
+
+    setTimeout(function(){
+      var chk=document.querySelector('#bcChecks .bc-check[data-phase="'+p.check+'"]');
+      if(chk)chk.classList.add('done');
+      document.getElementById(p.ph).classList.remove('active');
+      document.getElementById(p.ph).classList.add('done');
+      setPhaseCardDone(p.card);
+      runPhase(pi+1);
+    },nodes.length*320+700);
+  }
+
+  setTimeout(function(){runPhase(0)},400);
+}
+
+function showResult(gridId,resultId,yesCount){
+  var result=document.getElementById(resultId);
+  result.style.display='block';
+  var threshold=Math.ceil(nodes.length*2/3);
+  if(yesCount>=threshold){
+    result.className='result-bar pass';
+    result.innerHTML='✅ 投票通过 · '+yesCount+'/'+nodes.length+' 同意（≥ 2/3）· 交易上链确认';
+  }else{
+    result.className='result-bar reject';
+    result.innerHTML='❌ 投票被拒 · 仅 '+yesCount+'/'+nodes.length+' 同意（&lt; 2/3）· 交易驳回';
+  }
+}
+
+// ====== S3: MALICIOUS NODES ======
+var rogueNodes={};
+
+function renderRogueToggles(){
+  var container=document.getElementById('rogueToggles');
+  container.innerHTML='<span style="font-size:.82rem;color:var(--color-text-dim);margin-right:10px">点击设为作恶节点：</span>';
+  nodes.forEach(function(n,i){
+    var btn=document.createElement('button');
+    btn.className='node-toggle'+(rogueNodes[i]?' rogue':'');
+    btn.textContent=n.short;
+    btn.onclick=function(){
+      rogueNodes[i]=!rogueNodes[i];
+      this.classList.toggle('rogue',rogueNodes[i]);
+      this.blur();
+    };
+    container.appendChild(btn);
+  });
+}
+
+function startPBFT2(){
+  var btn=document.getElementById('btnVote2');
+  btn.disabled=true;btn.textContent='⏳ 投票进行中...';
+  document.getElementById('resultBar2').style.display='none';
+  document.getElementById('infoCard').style.display='none';
+  renderVoteGrid('voteGrid2');
+
+  nodes.forEach(function(n,i){
+    setTimeout(function(){
+      var card=document.getElementById('vc-voteGrid2-'+i);
+      var voteEl=document.getElementById('vv-voteGrid2-'+i);
+      card.classList.remove('broadcasting');void card.offsetWidth;
+      card.classList.add('broadcasting');
+      if(rogueNodes[i]){
+        card.classList.add('voted-no');
+        card.classList.remove('voted-yes');
+        voteEl.textContent='❌ 反对';
+      }else{
+        card.classList.add('voted-yes');
+        card.classList.remove('voted-no');
+        voteEl.textContent='✅ 同意';
+      }
+    },i*350);
+  });
+
+  setTimeout(function(){
+    var yesCount=0;
+    nodes.forEach(function(n,i){if(!rogueNodes[i])yesCount++});
+    var result=document.getElementById('resultBar2');
+    result.style.display='block';
+    var info=document.getElementById('infoCard');
+    info.style.display='block';
+    var threshold=Math.ceil(nodes.length*2/3);
+    var rogueCount=nodes.length-yesCount;
+
+    if(yesCount>=threshold){
+      result.className='result-bar pass';
+      result.innerHTML='✅ 投票通过 · '+yesCount+'/'+nodes.length+' 同意（≥ 2/3）· 容错公式 N≥3f+1 满足';
+      info.innerHTML='<p><strong style="color:var(--color-success)">作恶失败：</strong>仅有 '+rogueCount+' 个叛徒（≤ '+safeLimit+'），系统依然达成共识。这就是 PBFT 的容错能力——少数作恶者无法阻止合法交易上链。</p>';
+    }else{
+      result.className='result-bar reject';
+      result.innerHTML='❌ 投票被拒 · 仅 '+yesCount+'/'+nodes.length+' 同意（&lt; 2/3）· 超过容错上限 '+safeLimit+' 个叛徒';
+      info.innerHTML='<p><strong style="color:var(--color-danger)">作恶阻止了交易——但这也是设计目标：</strong>'+rogueCount+' 个叛徒（&gt; '+safeLimit+'），共识无法达成，交易被正常驳回。区块链不会接受可疑数据，宁可拒绝也不让脏数据上链。</p>';
+    }
+    btn.disabled=false;btn.textContent='🗳️ 重新投票';
+    btn.blur();
+  },nodes.length*350+600);
+}
+
+// ====== INIT ======
+function init(){
+  renderGenerals(0,false);
+  renderVoteGrid('voteGrid');
+  renderVoteGrid('voteGrid2');
+  renderRogueToggles();
+}
+init();
+
+// ====== REVEAL ======
+(function(){
+  var els=document.querySelectorAll('.reveal-up');
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}});
+  },{threshold:.18,rootMargin:'0px 0px -30px 0px'});
+  els.forEach(function(el){obs.observe(el)});
+})();
+
+// ====== PROGRESS BAR ======
+(function(){
+  var container=document.getElementById('progress-bar');
+  var secs=document.querySelectorAll('.section');
+  if(!container||!secs.length)return;
+
+  var total=secs.length,segH=Math.min(16,Math.floor(380/total)),trackH=segH*total;
+  var track=document.createElement('div');track.className='pb-track';track.style.height=trackH+'px';
+  container.appendChild(track);
+
+  var wrap=document.createElement('div');wrap.className='pb-segments';wrap.style.height=trackH+'px';
+  container.appendChild(wrap);
+
+  var labels=['拜占庭将军','PBFT投票','作恶节点','共识对比'];
+  for(var i=0;i<total;i++){
+    var seg=document.createElement('button');seg.className='pb-seg';seg.style.height=segH+'px';
+    seg.title=labels[i];seg.addEventListener('click',(function(j){return function(){secs[j].scrollIntoView({behavior:'smooth'})}})(i));
+    var lbl=document.createElement('span');lbl.className='pb-label';lbl.textContent=labels[i];seg.appendChild(lbl);
+    wrap.appendChild(seg);
+  }
+
+  var segs=wrap.querySelectorAll('.pb-seg');
+  var obs2=new IntersectionObserver(function(entries){
+    var best=null,br=0;
+    entries.forEach(function(e){if(e.intersectionRatio>br){br=e.intersectionRatio;best=e.target}});
+    if(best){
+      var idx=Array.from(secs).indexOf(best);
+      segs.forEach(function(s){s.classList.remove('active')});
+      if(segs[idx])segs[idx].classList.add('active');
+    }
+  },{threshold:[.1,.2,.3,.4,.5,.6,.7,.8,.9]});
+  secs.forEach(function(s){obs2.observe(s)});
+})();
+
+// ====== KEYBOARD ======
+(function(){
+  var secs=document.querySelectorAll('.section');
+  function curIdx(){
+    var best=0,br=0;
+    secs.forEach(function(s,i){
+      var r=s.getBoundingClientRect(),vh=window.innerHeight;
+      if(r.bottom<0||r.top>vh)return;
+      var vt=Math.max(r.top,0),vb=Math.min(r.bottom,vh);
+      var ratio=Math.max(0,(vb-vt)/Math.min(r.height,vh));
+      if(ratio>br){br=ratio;best=i}
+    });
+    return best;
+  }
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
+      e.preventDefault();var cur=curIdx();
+      var tgt=e.key==='ArrowDown'?Math.min(cur+1,secs.length-1):Math.max(cur-1,0);
+      secs[tgt].scrollIntoView({behavior:'smooth'});
+    }
+  });
+})();
+</script>
+</body>
+</html>

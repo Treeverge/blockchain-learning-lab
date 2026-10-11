@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数字签名演示</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ====== RESET & BASE ====== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+
+:root{
+  --color-bg:        oklch(26% 0.10 252);
+  --color-surface:   oklch(31% 0.09 252);
+  --color-surface2:  oklch(35% 0.08 252);
+  --color-surface3:  oklch(39% 0.07 252);
+  --color-text:      oklch(86% 0.10 85);
+  --color-text-dim:  oklch(68% 0.07 82);
+  --color-text-muted:oklch(52% 0.04 78);
+  --color-accent:    oklch(82% 0.16 86);
+  --color-accent-dim:oklch(70% 0.12 84);
+  --color-accent-glow:oklch(82% 0.16 86 / .55);
+  --color-accent-soft:oklch(82% 0.16 86 / .22);
+  --color-warm:      oklch(76% 0.14 65);
+  --color-danger:    oklch(60% 0.15 22);
+  --color-success:   oklch(66% 0.12 155);
+  --color-verify:    oklch(68% 0.12 195);
+  --border-subtle:   oklch(38% 0.06 250);
+  --border-card:     oklch(33% 0.05 248);
+  --font-display:'Sora',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono','Courier New',monospace;
+  --font-body:'PingFang SC','Microsoft YaHei','Hiragino Sans GB',sans-serif;
+  --space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:24px;
+  --space-xl:32px;--space-2xl:48px;--space-3xl:64px;--space-4xl:96px;
+  --ease-out:cubic-bezier(0.25,1,0.5,1);
+  --ease-smooth:cubic-bezier(0.22,1,0.36,1);
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;
+}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important}}
+
+body{
+  font-family:var(--font-body);
+  background:var(--color-bg);
+  color:var(--color-text);
+  overflow-x:hidden;
+  line-height:1.75;
+}
+
+/* ====== SCROLL CONTAINER ====== */
+#main{position:relative;z-index:1;scroll-snap-type:y mandatory;overflow-y:auto;height:100dvh;scroll-behavior:smooth}
+
+/* ====== PROGRESS BAR ====== */
+#progress-bar{position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;align-items:center}
+#progress-bar .pb-track{width:1px;background:oklch(86% 0.10 85 / .12);border-radius:1px}
+#progress-bar .pb-segments{display:flex;flex-direction:column;position:absolute;inset:0}
+#progress-bar .pb-seg{flex:1;cursor:pointer;position:relative;background:transparent;border:none;outline:none;transition:background .35s var(--ease-out)}
+#progress-bar .pb-seg.active{background:var(--color-accent);box-shadow:0 0 10px var(--color-accent-glow)}
+#progress-bar .pb-seg:hover{background:var(--color-accent-soft)}
+#progress-bar .pb-label{position:absolute;right:18px;top:50%;transform:translateY(-50%);white-space:nowrap;font-family:var(--font-display);font-size:.66rem;font-weight:600;color:var(--color-accent);opacity:0;transition:opacity .3s var(--ease-out);pointer-events:none}
+#progress-bar .pb-seg.active .pb-label{opacity:1}
+
+/* ====== TOP NAV (back link only) ====== */
+#top-nav{position:fixed;top:0;left:0;right:0;z-index:99;padding:14px 28px;display:flex;align-items:center;gap:10px}
+#top-nav a{font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--color-text-dim);text-decoration:none;transition:color .25s}
+#top-nav a:hover{color:var(--color-accent)}
+#top-nav span{color:var(--color-text-dim);font-size:.8rem}
+
+/* ====== SECTION (STEP) ====== */
+.section{min-height:100dvh;scroll-snap-align:start;display:flex;align-items:center;justify-content:center;padding:var(--space-3xl) var(--space-2xl);position:relative}
+.section-inner{max-width:1100px;width:100%;margin:0 auto}
+
+/* ====== REVEAL ANIMATIONS ====== */
+.reveal-up,.reveal-stagger>*{opacity:0}
+.reveal-up.visible{animation:rev-up .65s var(--ease-out) forwards}
+.reveal-stagger.visible>:nth-child(1){animation:rev-up .5s var(--ease-out) .04s forwards}
+.reveal-stagger.visible>:nth-child(2){animation:rev-up .5s var(--ease-out) .10s forwards}
+.reveal-stagger.visible>:nth-child(3){animation:rev-up .5s var(--ease-out) .16s forwards}
+.reveal-stagger.visible>:nth-child(4){animation:rev-up .5s var(--ease-out) .22s forwards}
+.reveal-stagger.visible>:nth-child(5){animation:rev-up .5s var(--ease-out) .28s forwards}
+.reveal-stagger.visible>:nth-child(6){animation:rev-up .5s var(--ease-out) .34s forwards}
+@keyframes rev-up{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+
+/* ====== TYPOGRAPHY ====== */
+h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,1.9rem);letter-spacing:-0.01em;color:var(--color-accent)}
+.section-label{font-family:var(--font-display);font-weight:600;font-size:.76rem;color:var(--color-accent-dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:var(--space-sm)}
+.step-desc{color:var(--color-text-dim);margin-bottom:20px;font-size:1.02rem;line-height:1.75}
+
+/* ====== BUTTONS ====== */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:12px 26px;font-family:var(--font-display);font-weight:600;font-size:.92rem;
+  background:var(--color-accent);color:oklch(24% 0.08 252);
+  border:none;border-radius:var(--radius-sm);cursor:pointer;
+  transition:transform .2s var(--ease-out),box-shadow .2s var(--ease-out),opacity .3s;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 4px 28px var(--color-accent-glow)}
+.btn:active{transform:translateY(0)}
+.btn:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+.btn.used{opacity:.35;pointer-events:none}
+.btn.tamper-btn{background:var(--color-warm);color:oklch(20% 0.04 60)}
+.btn.outline{background:transparent;border:1.5px solid var(--color-accent);color:var(--color-accent)}
+.btn.outline:hover{background:oklch(82% 0.16 86 / .08)}
+
+/* ====== STEP 1: KEYS ====== */
+.keys{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.key-card{
+  background:var(--color-surface2);border-radius:var(--radius-md);
+  padding:24px 28px;text-align:center;
+  opacity:0;transform:translateY(16px);
+  transition:opacity .5s var(--ease-out),transform .5s var(--ease-out);
+}
+.key-card.show{opacity:1;transform:translateY(0)}
+.key-card.priv{border:1px solid oklch(60% 0.12 22 / .45)}
+.key-card.pub{border:1px solid oklch(82% 0.12 86 / .45);transition-delay:.1s}
+.key-card .kicon{font-size:30px;display:block;margin-bottom:6px}
+.key-card .klabel{font-family:var(--font-display);font-weight:600;font-size:.9rem;margin-bottom:12px}
+.key-card.priv .klabel{color:var(--color-danger)}
+.key-card.pub .klabel{color:var(--color-accent)}
+.key-card .kval{
+  font-family:var(--font-mono);font-size:1.1rem;
+  padding:10px;background:var(--color-bg);border-radius:var(--radius-sm);
+  word-break:break-all;
+}
+.key-card .ksub{font-family:var(--font-mono);font-size:.72rem;color:var(--color-text-dim);margin-top:6px}
+.explain{
+  margin-top:20px;padding:18px 20px;background:var(--color-surface);
+  border-radius:var(--radius-md);color:var(--color-text-dim);font-size:.88rem;line-height:1.8;
+  border:1px solid var(--border-card);
+}
+
+/* ====== STEP 2: CHAIN ====== */
+.chain-scene{margin-bottom:24px;padding:16px 20px;background:var(--color-surface);border-radius:var(--radius-md);border:1px solid var(--border-card)}
+.chain-scene .scene-title{font-size:.82rem;color:var(--color-accent);font-family:var(--font-display);font-weight:600;margin-bottom:6px}
+.chain-scene .scene-text{font-size:.95rem;color:var(--color-text);line-height:1.8}
+
+.chain-wrap{position:relative;margin:20px 0 28px;overflow-x:auto}
+.chain-blocks{display:flex;align-items:center;gap:0;justify-content:center;min-width:max-content}
+.block{
+  background:var(--color-surface);border-radius:var(--radius-md);
+  padding:16px 18px;width:200px;text-align:center;flex-shrink:0;
+  border:1px solid var(--border-card);
+  transition:border-color .5s,background .5s,transform .3s var(--ease-out);
+  position:relative;z-index:1;
+}
+.block:hover{transform:translateY(-3px)}
+.block .bindex{font-family:var(--font-display);font-weight:700;font-size:.8rem;color:var(--color-accent);margin-bottom:6px}
+.block .bwho{font-size:.74rem;color:var(--color-text-dim);margin-bottom:4px}
+.block .bdata{font-size:.82rem;color:var(--color-text);margin-bottom:8px;line-height:1.4}
+.block .bhash{font-family:var(--font-mono);font-size:.64rem;color:var(--color-text-dim);word-break:break-all;line-height:1.3}
+.block .bsig{font-family:var(--font-mono);font-size:.64rem;color:var(--color-warm);margin-top:4px;word-break:break-all}
+.block .bstatus{display:inline-block;margin-top:6px;font-size:.68rem;font-family:var(--font-display);font-weight:600;padding:2px 10px;border-radius:10px}
+.block.ok .bstatus{color:var(--color-success);background:oklch(66% 0.12 155 / .12)}
+.block.broken .bstatus{color:var(--color-danger);background:oklch(60% 0.15 22 / .12)}
+.block.broken{border-color:var(--color-danger);background:oklch(60% 0.15 22 / .06)}
+.block.ok{border-color:oklch(66% 0.10 155 / .35)}
+
+.chain-link{
+  display:flex;align-items:center;justify-content:center;
+  width:48px;height:2px;background:var(--color-accent);
+  position:relative;flex-shrink:0;transition:background .5s;
+}
+.chain-link::after{
+  content:'';position:absolute;width:6px;height:6px;border-radius:50%;
+  background:var(--color-accent);
+  animation:flowDot 1.2s var(--ease-out) infinite;
+}
+.chain-link.broken{background:var(--color-danger)}
+.chain-link.broken::after{background:var(--color-danger);animation:none;opacity:.3}
+
+@keyframes flowDot{
+  0%{left:0;opacity:.3;transform:scale(.6)}
+  50%{left:calc(50% - 3px);opacity:1;transform:scale(1.2)}
+  100%{left:calc(100% - 6px);opacity:.3;transform:scale(.6)}
+}
+
+.input-row{display:flex;gap:12px;align-items:flex-end;margin-top:16px;flex-wrap:wrap}
+.input-row input{
+  flex:1;min-width:200px;padding:12px 16px;
+  background:var(--color-surface2);color:var(--color-text);border:1px solid var(--border-subtle);
+  border-radius:var(--radius-md);font-family:inherit;font-size:.95rem;transition:border-color .3s;
+}
+.input-row input:focus{outline:none;border-color:var(--color-accent)}
+
+/* ====== STEP 3: VERIFY ====== */
+.verifier-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+.verifier-card{
+  background:var(--color-surface);border-radius:var(--radius-md);padding:24px;
+  border:1px solid var(--border-card);text-align:center;
+  transition:border-color .5s,background .5s,box-shadow .5s,transform .4s var(--ease-out);
+  opacity:0;transform:translateY(16px);
+}
+.verifier-card.show{opacity:1;transform:translateY(0)}
+.verifier-card.verifying{border-color:var(--color-accent);box-shadow:0 0 24px oklch(82% 0.16 86 / .2)}
+.verifier-card.pass{border-color:var(--color-success);background:oklch(66% 0.12 155 / .05);box-shadow:0 0 20px oklch(66% 0.12 155 / .15)}
+.verifier-card .vicon{font-size:32px;display:block;margin-bottom:8px}
+.verifier-card .vname{font-family:var(--font-display);font-weight:600;font-size:.9rem;margin-bottom:4px;color:var(--color-text)}
+.verifier-card .vrole{font-size:.76rem;color:var(--color-text-dim);margin-bottom:14px}
+.verifier-card .vprogress{height:3px;background:var(--color-surface3);border-radius:2px;overflow:hidden;margin-bottom:12px}
+.verifier-card .vprogress-bar{height:100%;width:0%;background:var(--color-accent);border-radius:2px;transition:width .3s var(--ease-out)}
+.verifier-card.pass .vprogress-bar{background:var(--color-success)}
+.verifier-card .vstatus{font-size:.82rem;font-family:var(--font-display);font-weight:600;min-height:20px}
+.verifier-card .vstatus.checking{color:var(--color-accent)}
+.verifier-card .vstatus.ok{color:var(--color-success)}
+.verifier-card .vstatus.err{color:var(--color-danger)}
+.verifier-card .vdetail{font-size:.7rem;color:var(--color-text-dim);margin-top:6px;line-height:1.6;text-align:left;display:none}
+.verifier-card.pass .vdetail{display:block}
+
+.unified-result{
+  margin-top:24px;padding:20px 28px;border-radius:var(--radius-md);text-align:center;
+  opacity:0;transform:translateY(12px);
+  transition:opacity .6s var(--ease-out),transform .6s var(--ease-out),border-color .4s,background .4s;
+}
+.unified-result.show{opacity:1;transform:translateY(0)}
+.unified-result.pass{border:1px solid var(--color-success);background:oklch(66% 0.12 155 / .06)}
+.unified-result .urtitle{font-family:var(--font-display);font-weight:700;font-size:1.1rem;margin-bottom:8px}
+.unified-result.pass .urtitle{color:var(--color-success)}
+.unified-result .ursub{font-size:.88rem;color:var(--color-text-dim);line-height:1.7}
+
+@keyframes verifySweep{
+  0%{box-shadow:inset 0 0 0 0 oklch(82% 0.16 86 / 0)}
+  50%{box-shadow:inset 0 0 24px 8px oklch(82% 0.16 86 / .25)}
+  100%{box-shadow:inset 0 0 0 0 oklch(82% 0.16 86 / 0)}
+}
+.block.scanning{animation:verifySweep .7s var(--ease-out)}
+@keyframes checkPop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.3)}100%{transform:scale(1);opacity:1}}
+.check-mark{display:inline-block;animation:checkPop .4s var(--ease-smooth) forwards;color:var(--color-success);font-weight:700}
+
+@keyframes unisonPulse{
+  0%{box-shadow:0 0 0 0 oklch(66% 0.12 155 / .5)}
+  100%{box-shadow:0 0 0 24px oklch(66% 0.12 155 / 0)}
+}
+.unified-result.pass.unison{animation:unisonPulse 1s var(--ease-out)}
+
+/* ====== STEP 4: TAMPER ====== */
+.tamper-targets{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.tamper-target{
+  padding:8px 16px;background:var(--color-surface);border:1px solid var(--border-card);
+  border-radius:var(--radius-sm);cursor:pointer;font-size:.85rem;color:var(--color-text);
+  transition:border-color .2s,background .2s;
+  font-family:var(--font-body);
+}
+.tamper-target:hover{border-color:var(--color-warm)}
+.tamper-target.selected{border-color:var(--color-warm);background:oklch(76% 0.14 65 / .1)}
+
+.tamper-edit{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+.tamper-edit input{flex:1;min-width:200px;padding:10px 14px;background:var(--color-surface2);color:var(--color-text);border:1px solid var(--color-warm);border-radius:var(--radius-md);font-family:inherit;font-size:.9rem}
+.tamper-edit input:focus{outline:none;border-color:var(--color-danger)}
+
+.alert-bar{
+  padding:14px 20px;background:oklch(60% 0.15 22 / .08);
+  border:1px solid oklch(60% 0.12 22 / .35);border-radius:var(--radius-md);
+  color:var(--color-danger);font-weight:600;font-size:.92rem;margin:16px 0;
+  opacity:0;transform:translateY(-8px);transition:opacity .4s,transform .4s;
+}
+.alert-bar.show{opacity:1;transform:translateY(0)}
+.alert-detail{font-weight:400;font-size:.8rem;color:var(--color-text-dim);margin-top:6px;line-height:1.8}
+
+.summary{
+  margin-top:28px;padding:24px 28px;background:var(--color-surface);
+  border-radius:var(--radius-lg);border:1px solid var(--color-accent);
+  opacity:0;transform:translateY(16px);
+  transition:opacity .5s var(--ease-out),transform .5s var(--ease-out);
+}
+.summary.show{opacity:1;transform:translateY(0)}
+.summary p{color:var(--color-text-dim);line-height:2;font-size:.88rem}
+
+@keyframes shackle{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.block.shaking{animation:shackle .08s ease-in-out 5}
+@keyframes redGlow{0%,100%{box-shadow:0 0 0 0 oklch(60% 0.15 22 / 0)}50%{box-shadow:0 0 20px 6px oklch(60% 0.15 22 / .3)}}
+.block.glowing{animation:redGlow .8s var(--ease-out) 3}
+
+/* ====== FOOTER ====== */
+footer{text-align:center;padding:40px 24px;color:var(--color-text-dim);font-size:.8rem;border-top:1px solid var(--border-subtle);margin-top:40px}
+
+/* ====== RESPONSIVE ====== */
+@media(max-width:768px){
+  .section{padding:var(--space-xl) var(--space-lg)}
+  .keys{grid-template-columns:1fr}
+  .chain-blocks{flex-direction:column;gap:0}
+  .chain-link{width:2px;height:32px;margin:0 auto}
+  .block{width:100%;max-width:280px}
+  .verifier-grid{grid-template-columns:1fr}
+  #progress-bar{right:8px}
+  #progress-bar .pb-label{display:none}
+  #top-nav{padding:10px 16px}
+}
+</style>
+</head>
+<body>
+
+<div id="top-nav">
+  <a href="blockchain-presentation.html#s11">← 返回演示</a>
+  <span>数字签名演示</span>
+</div>
+
+<nav id="progress-bar" aria-label="步骤进度"></nav>
+
+<main id="main">
+
+<!-- ====== STEP 1 ====== -->
+<section class="section" id="s1">
+  <div class="section-inner">
+    <div class="reveal-up"><p class="section-label">Step 1</p></div>
+    <h2 class="reveal-up">生成密钥对</h2>
+    <p class="step-desc reveal-up">私钥用来签名——只有你自己持有。公钥用来验证——可以发给任何人。<br>这里使用简化 RSA：两个小素数 p=61, q=53，让你能看清每一步的数学过程。</p>
+
+    <div class="reveal-up"><button class="btn" id="btnKey" onclick="genKeys()">🔑 生成我的密钥对</button></div>
+
+    <div class="keys" id="keysBox" style="display:none">
+      <div class="key-card priv" id="kcPriv">
+        <span class="kicon">🔒</span>
+        <div class="klabel">私钥 · 绝不可泄露</div>
+        <div class="kval">d = 2753</div>
+        <div class="ksub">n = 3233</div>
+      </div>
+      <div class="key-card pub" id="kcPub">
+        <span class="kicon">📢</span>
+        <div class="klabel">公钥 · 可以公开</div>
+        <div class="kval">e = 17</div>
+        <div class="ksub">n = 3233</div>
+      </div>
+    </div>
+
+    <div class="explain reveal-up" id="explainBox" style="display:none">
+      <strong>RSA 原理（极简）</strong><br>
+      找两个素数 p=61, q=53 → 相乘得 n=3233。找 e=17 和 d=2753，使 (m<sup>e</sup>)<sup>d</sup> mod n = m。<br>
+      <strong>签名</strong>：哈希值<sup>d</sup> mod n &nbsp;|&nbsp; <strong>验证</strong>：签名<sup>e</sup> mod n，看是否等于哈希值。<br>
+      安全根基：真实场景中 n 是一个 600 位的天文数字，从 n 反推 p 和 q 需要宇宙年龄那么久。
+    </div>
+  </div>
+</section>
+
+<!-- ====== STEP 2 ====== -->
+<section class="section" id="s2">
+  <div class="section-inner">
+    <div class="reveal-up"><p class="section-label">Step 2</p></div>
+    <h2 class="reveal-up">构建供应链签名链</h2>
+    <p class="step-desc reveal-up">每条记录不仅要签名，还包含前一条记录的哈希。这样所有记录串成一条链——改其中一条，后面全部断裂。</p>
+
+    <div class="chain-scene reveal-up">
+      <div class="scene-title">场景：跨区域管道工程 · DN800 钢管供应</div>
+      <div class="scene-text">你作为<strong style="color:var(--color-accent)">物资供应商（北方钢铁集团）</strong>，负责向工程建设项目部供应一批特种钢管。每一环节的经手人都对数据签名确认，哈希值串联形成不可篡改的审计链。</div>
+    </div>
+
+    <div class="chain-wrap reveal-up">
+      <div class="chain-blocks" id="chainBlocks"></div>
+    </div>
+
+    <p class="reveal-up" style="color:var(--color-text-dim);font-size:.88rem;margin-top:-8px;margin-bottom:16px">
+      你在第 2 个环节——输入发货数据并签名确认。
+    </p>
+
+    <div class="input-row reveal-up">
+      <input id="msgInput" value="北方钢铁 DN800×12mm 200吨 炉批号 LOT-2024-0715-A3" placeholder="输入你要签名的数据...">
+      <button class="btn" id="btnSign" onclick="signBlock()">✍️ 签名确认</button>
+    </div>
+
+    <div class="reveal-up" style="margin-top:18px">
+      <p id="signInfo" style="color:var(--color-text-dim);font-size:.82rem;display:none"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ====== STEP 3 ====== -->
+<section class="section" id="s3">
+  <div class="section-inner">
+    <div class="reveal-up"><p class="section-label">Step 3</p></div>
+    <h2 class="reveal-up">分布式验证——任何人都可以独立核验</h2>
+    <p class="step-desc reveal-up">区块链没有中心权威。任何人——监理公司、银行、监管机构、甚至普通公众——都可以下载这条链，<strong style="color:var(--color-accent)">独立运行验证</strong>。所有人得到同一个结论，不需要信任任何一个"上级"。</p>
+
+    <div class="reveal-up"><button class="btn" id="btnVerify" onclick="verifyAll()">🔍 启动分布式验证</button></div>
+
+    <div class="verifier-grid" id="verifierGrid" style="display:none">
+      <div class="verifier-card" id="vc0">
+        <span class="vicon">🏗️</span>
+        <div class="vname">项目监理 · 第三方监理公司</div>
+        <div class="vrole">第三方监理公司，负责工程质量把关</div>
+        <div class="vprogress"><div class="vprogress-bar" id="vp0"></div></div>
+        <div class="vstatus checking" id="vs0">等待验证...</div>
+        <div class="vdetail" id="vd0"></div>
+      </div>
+      <div class="verifier-card" id="vc1">
+        <span class="vicon">🏦</span>
+        <div class="vname">贷款银行 · 商业银行</div>
+        <div class="vrole">为项目提供贷款，需要确认款项用途真实</div>
+        <div class="vprogress"><div class="vprogress-bar" id="vp1"></div></div>
+        <div class="vstatus checking" id="vs1">等待验证...</div>
+        <div class="vdetail" id="vd1"></div>
+      </div>
+      <div class="verifier-card" id="vc2">
+        <span class="vicon">🏛️</span>
+        <div class="vname">监管部门 · 行业监管部门</div>
+        <div class="vrole">行业主管，监督工程合规性</div>
+        <div class="vprogress"><div class="vprogress-bar" id="vp2"></div></div>
+        <div class="vstatus checking" id="vs2">等待验证...</div>
+        <div class="vdetail" id="vd2"></div>
+      </div>
+      <div class="verifier-card" id="vc3">
+        <span class="vicon">🌐</span>
+        <div class="vname">任何公众成员</div>
+        <div class="vrole">关心公共工程的普通公民，有权查看完整数据</div>
+        <div class="vprogress"><div class="vprogress-bar" id="vp3"></div></div>
+        <div class="vstatus checking" id="vs3">等待验证...</div>
+        <div class="vdetail" id="vd3"></div>
+      </div>
+    </div>
+
+    <div class="unified-result" id="unifiedResult"></div>
+
+    <div class="chain-wrap" style="margin-top:28px">
+      <div class="chain-blocks" id="chainBlocksVerify"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== STEP 4 ====== -->
+<section class="section" id="s4">
+  <div class="section-inner">
+    <div class="reveal-up"><p class="section-label">Step 4</p></div>
+    <h2 class="reveal-up">篡改中间环节 → 整链断裂</h2>
+    <p class="step-desc reveal-up">假设有人篡改了链条中间某个环节的数据——签名还是旧的（因为没有私钥，无法重新签名）。系统会检测到什么？</p>
+
+    <p class="reveal-up" style="color:var(--color-text-dim);font-size:.88rem;margin-bottom:10px">选择要篡改的环节：</p>
+    <div class="tamper-targets reveal-up" id="tamperTargets"></div>
+
+    <div class="tamper-edit" id="tamperEdit" style="display:none">
+      <input id="tamperInput" placeholder="修改数据...">
+      <button class="btn tamper-btn" id="btnTamper" onclick="applyTamper()">⚠ 篡改</button>
+    </div>
+
+    <div class="reveal-up"><button class="btn outline" id="btnResetTamper" onclick="resetTamper()" style="display:none">↻ 撤销篡改 恢复链条</button></div>
+
+    <div class="alert-bar" id="alertBar">
+      <div id="alertTitle"></div>
+      <div class="alert-detail" id="alertDetail"></div>
+    </div>
+
+    <div class="chain-wrap">
+      <div class="chain-blocks" id="chainBlocksTamper"></div>
+    </div>
+
+    <div class="summary" id="summaryBox">
+      <p>篡改了一条记录 → 该记录的哈希值改变 → 下一条记录的「前一条哈希」对不上 → 下一条记录的签名也失效 → <strong style="color:var(--color-danger)">级联断裂</strong>。</p>
+      <p style="margin-top:8px">改其中一个环节，后面<strong style="color:var(--color-danger)">全部作废</strong>。攻击者没有私钥，无法为篡改后的数据重新生成有效签名。<br><strong style="color:var(--color-accent)">这就是区块链的防篡改核心——签名 + 哈希链 = 不可伪造、不可篡改。</strong></p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>数字签名演示 · 简化 RSA（p=61, q=53, n=3233, e=17, d=2753）· 仅用于教学</footer>
+
+<script>
+// ====== ALGORITHM ======
+const P=61,Q=53,N=3233,E=17,D=2753;
+
+function simpleHash(s){
+  let h=0;
+  for(let i=0;i<s.length;i++){h=((h<<5)-h+s.charCodeAt(i))|0;h=((h^(h>>>16))*0x45d9f3b)|0}
+  return(h>>>0).toString(16).padStart(8,'0').slice(-8);
+}
+
+function modPow(base,exp,mod){
+  let r=1n,b=BigInt(base)%BigInt(mod),e=BigInt(exp),m=BigInt(mod);
+  while(e>0n){if(e&1n)r=(r*b)%m;b=(b*b)%m;e>>=1n}
+  return Number(r);
+}
+
+function makeSignature(data,prevHash){
+  const hash=simpleHash(data+prevHash);
+  const hashNum=parseInt(hash,16)%N;
+  const sig=modPow(hashNum,D,N);
+  return{hash,hashNum,signature:sig,data,prevHash};
+}
+
+function verifySignature(data,prevHash,signature){
+  const hash=simpleHash(data+prevHash);
+  const hashNum=parseInt(hash,16)%N;
+  const decrypted=modPow(signature,E,N);
+  return{hash,hashNum,decrypted,valid:decrypted===hashNum};
+}
+
+// ====== CHAIN DATA ======
+const defaultChain=[
+  {who:'物资供应商（北方钢铁集团）',data:'DN800钢管 200吨 炉批号LOT-2024-0715-A3 质检合格',whoShort:'北方钢铁'},
+  {who:'物流承运商（恒通物流）',data:'港口->内陆工地 冷链专列 提单号COSU-0815',whoShort:'恒通物流'},
+  {who:'施工单位（中建工程）',data:'到货签收 管材外观检验合格 入库编号XJ-0886',whoShort:'中建工程'},
+  {who:'甲方验收（管道运营公司）',data:'工程验收通过 压力测试12MPa合格 竣工备案',whoShort:'管道运营'},
+];
+
+function buildChain(chainData,customData,customIdx){
+  const chain=[];
+  for(let i=0;i<chainData.length;i++){
+    const prevHash=i===0?'00000000':chain[i-1].hash;
+    const data=(customData!==undefined && i===customIdx)?customData:chainData[i].data;
+    const r=makeSignature(data,prevHash);
+    chain.push({...chainData[i],data,prevHash,hash:r.hash,hashNum:r.hashNum,signature:r.signature});
+  }
+  return chain;
+}
+
+let currentChain=buildChain(defaultChain);
+let keysShown=false;
+let signed=false;
+let tampered=false;
+let tamperIdx=-1;
+
+// ====== RENDER CHAIN ======
+function esc(s){
+  return String(s).replace(/[&<>"']/g,function(c){
+    return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function renderChain(chain,containerId){
+  const container=document.getElementById(containerId);
+  container.innerHTML='';
+
+  chain.forEach((b,i)=>{
+    const link=i<chain.length-1
+      ?'<div class="chain-link" style="animation-delay:'+(i*0.15)+'s"></div>'
+      :'';
+
+    const blockHTML=
+      '<div class="block ok" id="b-'+containerId+'-'+i+'">'+
+        '<div class="bindex">#'+(i+1)+'</div>'+
+        '<div class="bwho">'+esc(b.whoShort||b.who)+'</div>'+
+        '<div class="bdata">'+esc(b.data.length>28?b.data.slice(0,28)+'...':b.data)+'</div>'+
+        '<div class="bhash">H: '+b.hash+'</div>'+
+        '<div class="bsig">Sig: '+b.signature+'</div>'+
+        '<div class="bstatus">✅ 有效</div>'+
+      '</div>'+
+      link;
+
+    container.innerHTML+=blockHTML;
+  });
+
+  // Stagger entrance
+  requestAnimationFrame(function(){
+    container.querySelectorAll('.block').forEach(function(el,i){
+      el.style.opacity='0';
+      el.style.transform='translateY(12px)';
+      el.style.transition='opacity .35s cubic-bezier(0.25,1,0.5,1), transform .35s cubic-bezier(0.25,1,0.5,1)';
+      setTimeout(function(){
+        el.style.opacity='1';
+        el.style.transform='translateY(0)';
+      },i*120);
+    });
+  });
+}
+
+// ====== STEP 1: GENERATE KEYS ======
+function genKeys(){
+  const btn=document.getElementById('btnKey');
+  btn.textContent='⏳ 生成中...';btn.disabled=true;
+
+  setTimeout(function(){
+    keysShown=true;
+    btn.classList.add('used');
+
+    const box=document.getElementById('keysBox');
+    box.style.display='grid';
+    requestAnimationFrame(function(){
+      document.getElementById('kcPriv').classList.add('show');
+      document.getElementById('kcPub').classList.add('show');
+    });
+
+    const explain=document.getElementById('explainBox');
+    explain.style.display='block';
+    requestAnimationFrame(function(){explain.style.opacity='1'});
+
+    document.getElementById('s1').classList.add('completed');
+  },350);
+}
+
+// ====== STEP 2: SIGN ======
+function signBlock(){
+  if(!keysShown){
+    document.getElementById('s1').scrollIntoView({behavior:'smooth',block:'start'});
+    setTimeout(genKeys,300);
+    return;
+  }
+
+  const input=document.getElementById('msgInput');
+  const data=input.value.trim();
+  if(!data)return;
+
+  currentChain=buildChain(defaultChain,data,1);
+  signed=true;
+
+  document.getElementById('btnSign').classList.add('used');
+  document.getElementById('signInfo').style.display='block';
+  document.getElementById('signInfo').innerHTML=
+    '✅ 已签名 · 哈希=<span style="font-family:JetBrains Mono,monospace;color:var(--color-accent)">'+currentChain[1].hash+'</span> · 签名=<span style="font-family:JetBrains Mono,monospace;color:var(--color-warm)">'+currentChain[1].signature+'</span>';
+
+  input.disabled=true;
+  renderChain(currentChain,'chainBlocks');
+  initTamperTargets();
+
+  document.getElementById('s2').classList.add('completed');
+}
+
+// ====== STEP 3: VERIFY ======
+function verifyAll(){
+  if(!signed){
+    document.getElementById('s2').scrollIntoView({behavior:'smooth',block:'start'});
+    return;
+  }
+
+  const btn=document.getElementById('btnVerify');
+  if(btn.disabled)return; // 防止重复点击启动多轮验证
+  btn.disabled=true;
+  btn.classList.add('used');
+
+  renderChain(currentChain,'chainBlocksVerify');
+
+  const grid=document.getElementById('verifierGrid');
+  grid.style.display='grid';
+  const cards=grid.querySelectorAll('.verifier-card');
+  cards.forEach(function(c,i){setTimeout(function(){c.classList.add('show')},i*120)});
+
+  const nVerifiers=4;
+  let completedCount=0;
+
+  function runVerifier(idx){
+    const card=document.getElementById('vc'+idx);
+    const bar=document.getElementById('vp'+idx);
+    const status=document.getElementById('vs'+idx);
+    const detail=document.getElementById('vd'+idx);
+
+    card.classList.add('verifying');
+    status.className='vstatus checking';
+    status.textContent='正在验证...';
+
+    let blockIdx=0;
+    const totalBlocks=currentChain.length;
+
+    function verifyNextBlock(){
+      if(blockIdx>=totalBlocks){
+        completedCount++;
+        card.classList.remove('verifying');
+        card.classList.add('pass');
+        status.className='vstatus ok';
+        status.innerHTML='<span class="check-mark">✅</span> 全部验证通过';
+        detail.innerHTML=
+          '<div style="color:var(--color-success);margin-bottom:4px;">独立验证结果：</div>'+
+          currentChain.map(function(b,i){return '#'+(i+1)+' '+b.whoShort+' → Hash匹配 · Sig有效'}).join('<br>');
+
+        if(completedCount===nVerifiers){
+          const verifyBtn=document.getElementById('btnVerify');
+          verifyBtn.disabled=false;
+          verifyBtn.textContent='🔍 重新验证';
+          showUnifiedResult();
+        }
+        return;
+      }
+
+      const pct=Math.round(((blockIdx+1)/totalBlocks)*100);
+      bar.style.width=pct+'%';
+      status.textContent='正在验证环节 #'+(blockIdx+1)+'...';
+
+      const blocks=document.querySelectorAll('#chainBlocksVerify .block');
+      blocks.forEach(function(b,i){
+        if(i===blockIdx)b.classList.add('scanning');
+        else b.classList.remove('scanning');
+      });
+
+      blockIdx++;
+      setTimeout(verifyNextBlock,350+Math.random()*200);
+    }
+
+    setTimeout(verifyNextBlock,idx*600);
+  }
+
+  for(let i=0;i<nVerifiers;i++){
+    setTimeout(function(){runVerifier(i)},i*800);
+  }
+}
+
+function showUnifiedResult(){
+  const ur=document.getElementById('unifiedResult');
+  ur.className='unified-result show pass unison';
+  ur.innerHTML=
+    '<div class="urtitle">✅ 4 个独立验证方，同一个结论</div>'+
+    '<div class="ursub">监理公司、银行、监管部门、公众——彼此互不认识，各自独立运行验证。<br>'+
+    '没有中央权威，没有"上级"审批——<strong style="color:var(--color-success)">算法就是担保</strong>。<br>'+
+    '这就是<strong style="color:var(--color-accent)">分布式信任</strong>：不需要信任任何单一方，只需要信任数学。</div>';
+
+  document.getElementById('s3').classList.add('completed');
+
+  setTimeout(function(){
+    document.querySelectorAll('#chainBlocksVerify .block').forEach(function(b){
+      b.style.borderColor='oklch(66% 0.12 155)';
+      b.style.boxShadow='0 0 12px oklch(66% 0.12 155 / .2)';
+    });
+  },800);
+}
+
+// ====== STEP 4: TAMPER ======
+function initTamperTargets(){
+  const container=document.getElementById('tamperTargets');
+  container.innerHTML='';
+  currentChain.forEach(function(b,i){
+    const btn=document.createElement('button');
+    btn.className='tamper-target';
+    btn.textContent='#'+(i+1)+' '+b.whoShort;
+    btn.onclick=function(){selectTamperTarget(i)};
+    container.appendChild(btn);
+  });
+}
+
+function selectTamperTarget(idx){
+  if(!signed)return;
+  tamperIdx=idx;
+  document.querySelectorAll('.tamper-target').forEach(function(el,i){
+    el.classList.toggle('selected',i===idx);
+  });
+
+  const edit=document.getElementById('tamperEdit');
+  edit.style.display='flex';
+  const input=document.getElementById('tamperInput');
+  const orig=currentChain[idx].data;
+  const tampered=orig.replace(/\d+/,function(m){return String(Number(m)+99)});
+  input.value=tampered;
+  document.getElementById('btnTamper').classList.remove('used');
+  document.getElementById('btnResetTamper').style.display='none';
+
+  const alertBar=document.getElementById('alertBar');
+  alertBar.classList.remove('show');
+  alertBar.style.display='none';
+
+  const summary=document.getElementById('summaryBox');
+  summary.classList.remove('show');
+  summary.style.display='none';
+}
+
+function applyTamper(){
+  if(tamperIdx<0)return;
+
+  const tamperedData=document.getElementById('tamperInput').value.trim();
+  if(!tamperedData||tamperedData===currentChain[tamperIdx].data)return;
+
+  // Build tampered chain — spread old data, only changing the tampered block's data
+  const tamperedChain=currentChain.map(function(b,i){
+    if(i===tamperIdx)return{...b,data:tamperedData};
+    return{...b};
+  });
+
+  tampered=true;
+  document.getElementById('btnTamper').classList.add('used');
+  document.getElementById('btnResetTamper').style.display='inline-flex';
+
+  renderTamperedChain(tamperedChain,tamperIdx);
+
+  // Show alert
+  const alertBar=document.getElementById('alertBar');
+  alertBar.style.display='block';
+  document.getElementById('alertTitle').textContent=
+    '🚨 检测到篡改：环节 #'+(tamperIdx+1)+'「'+currentChain[tamperIdx].whoShort+'」的数据被修改';
+  document.getElementById('alertDetail').innerHTML=
+    '<span style="color:var(--color-danger)">·</span> 篡改前哈希：'+currentChain[tamperIdx].hash+'<br>'+
+    '<span style="color:var(--color-danger)">·</span> 篡改后哈希：'+simpleHash(tamperedData+currentChain[tamperIdx].prevHash)+'（已变化）<br>'+
+    '<span style="color:var(--color-danger)">·</span> 签名 '+currentChain[tamperIdx].signature+' 仍是旧的（攻击者没有私钥无法重新签名）<br>'+
+    '<span style="color:var(--color-danger)">·</span> 后续环节因前链哈希不匹配而全部失效 → <strong>级联断裂</strong>';
+
+  requestAnimationFrame(function(){alertBar.classList.add('show')});
+
+  const summary=document.getElementById('summaryBox');
+  summary.style.display='block';
+  requestAnimationFrame(function(){summary.classList.add('show')});
+
+  document.getElementById('s4').classList.add('completed');
+}
+
+function renderTamperedChain(chain,fromIdx){
+  const container=document.getElementById('chainBlocksTamper');
+  container.innerHTML='';
+
+  chain.forEach(function(b,i){
+    const isBroken=i>=fromIdx;
+    const isOk=i<fromIdx;
+
+    const link=i<chain.length-1
+      ?'<div class="chain-link'+(i>=fromIdx?' broken':'')+'"></div>'
+      :'';
+
+    // Recompute hash for the directly tampered block to show the mismatch
+    const actualHash=i===fromIdx
+      ?simpleHash(b.data+(i===0?'00000000':chain[i-1].hash))
+      :b.hash;
+
+    const blockHTML=
+      '<div class="block'+(isBroken?' broken shaking':isOk?' ok':'')+'" id="b-t-'+i+'">'+
+        '<div class="bindex">#'+(i+1)+'</div>'+
+        '<div class="bwho">'+esc(b.whoShort)+'</div>'+
+        '<div class="bdata">'+esc(b.data.length>28?b.data.slice(0,28)+'...':b.data)+'</div>'+
+        '<div class="bhash">H: '+((isBroken&&i===fromIdx)?actualHash:b.hash)+'</div>'+
+        '<div class="bsig">Sig: '+b.signature+'</div>'+
+        '<div class="bstatus">'+(isBroken?'⚠ 断裂':'✅ 有效')+'</div>'+
+      '</div>'+
+      link;
+
+    container.innerHTML+=blockHTML;
+  });
+
+  requestAnimationFrame(function(){
+    container.querySelectorAll('.block').forEach(function(el,i){
+      el.style.opacity='0';
+      el.style.transform='translateY(12px)';
+      el.style.transition='opacity .35s cubic-bezier(0.25,1,0.5,1), transform .35s cubic-bezier(0.25,1,0.5,1)';
+      setTimeout(function(){
+        el.style.opacity='1';
+        el.style.transform='translateY(0)';
+      },i*150+(i>=fromIdx?300:0));
+    });
+  });
+}
+
+function resetTamper(){
+  tampered=false;
+  tamperIdx=-1;
+  document.getElementById('btnTamper').classList.remove('used');
+  document.getElementById('btnResetTamper').style.display='none';
+  document.getElementById('tamperEdit').style.display='none';
+  document.getElementById('alertBar').style.display='none';
+  document.getElementById('alertBar').classList.remove('show');
+  document.getElementById('summaryBox').style.display='none';
+  document.getElementById('summaryBox').classList.remove('show');
+  document.querySelectorAll('.tamper-target').forEach(function(el){el.classList.remove('selected')});
+  document.getElementById('chainBlocksTamper').innerHTML='';
+}
+
+// ====== INIT ======
+function init(){
+  const unsignedChain=defaultChain.map(function(b,i){return{
+    ...b,prevHash:i===0?'00000000':'???????',hash:'???????',signature:'???????'
+  }});
+  renderChain(unsignedChain,'chainBlocks');
+  initTamperTargets();
+}
+
+// ====== REVEAL ANIMATIONS ======
+(function(){
+  const els=document.querySelectorAll('.reveal-up,.reveal-stagger');
+  const obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}
+    });
+  },{threshold:.18,rootMargin:'0px 0px -30px 0px'});
+  els.forEach(function(el){obs.observe(el)});
+})();
+
+// ====== PROGRESS BAR ======
+(function(){
+  const container=document.getElementById('progress-bar');
+  const secs=document.querySelectorAll('.section');
+  if(!container||!secs.length)return;
+
+  const totalSecs=secs.length;
+  const segHeight=Math.min(16,Math.floor(380/totalSecs));
+  const trackHeight=segHeight*totalSecs;
+
+  const track=document.createElement('div');
+  track.className='pb-track';
+  track.style.height=trackHeight+'px';
+  container.appendChild(track);
+
+  const segsWrap=document.createElement('div');
+  segsWrap.className='pb-segments';
+  segsWrap.style.height=trackHeight+'px';
+  container.appendChild(segsWrap);
+
+  const shortLabels=['密钥对','签名链','分布式验证','篡改检测'];
+
+  for(let i=0;i<totalSecs;i++){
+    const seg=document.createElement('button');
+    seg.className='pb-seg';
+    seg.style.height=segHeight+'px';
+    seg.setAttribute('aria-label','跳转到步骤'+(i+1));
+    seg.title=shortLabels[i];
+    seg.addEventListener('click',function(){secs[i].scrollIntoView({behavior:'smooth'})});
+
+    const label=document.createElement('span');
+    label.className='pb-label';
+    label.textContent=shortLabels[i];
+    seg.appendChild(label);
+    segsWrap.appendChild(seg);
+  }
+
+  const segs=segsWrap.querySelectorAll('.pb-seg');
+  const obs=new IntersectionObserver(function(entries){
+    let best=null,bestRatio=0;
+    entries.forEach(function(e){if(e.intersectionRatio>bestRatio){bestRatio=e.intersectionRatio;best=e.target}});
+    if(best){
+      const idx=Array.from(secs).indexOf(best);
+      segs.forEach(function(s){s.classList.remove('active')});
+      if(segs[idx])segs[idx].classList.add('active');
+    }
+  },{threshold:[.1,.2,.3,.4,.5,.6,.7,.8,.9]});
+  secs.forEach(function(s){obs.observe(s)});
+})();
+
+// ====== KEYBOARD ======
+(function(){
+  const secs=document.querySelectorAll('.section');
+  function curIdx(){
+    let best=0,br=0;
+    secs.forEach(function(s,i){
+      const rect=s.getBoundingClientRect();
+      const vh=window.innerHeight;
+      if(rect.bottom<0||rect.top>vh)return;
+      const visTop=Math.max(rect.top,0),visBot=Math.min(rect.bottom,vh);
+      const ratio=Math.max(0,(visBot-visTop)/Math.min(rect.height,vh));
+      if(ratio>br){br=ratio;best=i}
+    });
+    return best;
+  }
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+      e.preventDefault();
+      const cur=curIdx(),target=e.key==='ArrowDown'?Math.min(cur+1,secs.length-1):Math.max(cur-1,0);
+      secs[target].scrollIntoView({behavior:'smooth'});
+    }
+  });
+})();
+
+init();
+</script>
+</body>
+</html>

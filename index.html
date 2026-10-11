@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>区块链学习实验室 · 从技术到信任</title>
+    <meta
+      name="description"
+      content="先在浏览器体验原理，再通过六天源码深入区块链。交互式 DeFi 交换、数字签名、共识与溯源教学实验。"
+    />
+    <link rel="stylesheet" href="assets/css/lab.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html"
+        ><span class="brand-mark" aria-hidden="true">▤</span>
+        区块链学习实验室</a
+      ><span class="header-meta">LEARN BY EXPERIMENTING</span>
+    </header>
+    <main class="shell">
+      <section class="hero portal-hero">
+        <div>
+          <p class="eyebrow">区块链：从技术到信任</p>
+          <h1>先动手，<br />再理解背后的规则<span class="blue">。</span></h1>
+          <p class="hero-copy">
+            从网页实验到六天源码。<br />改变一个条件，追踪一次结果，让抽象概念变得可验证。
+          </p>
+        </div>
+        <aside class="hero-note">
+          <span class="note-index">两条学习路径</span>
+          <p>15 分钟体验原理<br />6 个章节深入源码</p>
+          <div class="note-bottom">
+            <span>中文讲解 · 本地模拟</span><span>不需要钱包或真实资产</span>
+          </div>
+        </aside>
+      </section>
+      <section class="featured">
+        <div class="featured-copy">
+          <p class="eyebrow">新实验 / DEFI EXCHANGE</p>
+          <h2>100 A，能换到 100 B 吗？</h2>
+          <p>
+            自己做一笔交易，对比池子深度，找到手续费，再看看别人先成交后，你的报价会发生什么。
+          </p>
+          <a href="03-演示文稿/defi-exchange.html">开始交换实验 →</a>
+        </div>
+        <div
+          class="featured-figure"
+          aria-label="输入 100 A，在初始储备各 1000 的池子中，会换到多少 B？"
+        >
+          <div><small>你付出</small><strong>100 A</strong></div>
+          <span aria-hidden="true">→</span>
+          <div>
+            <small>你收到 · 初始储备 1000 / 1000</small
+            ><strong>? B</strong>
+          </div>
+        </div>
+      </section>
+      <h2 class="section-title">从体验到源码</h2>
+      <p class="caption">
+        交换实验采用新版教学流程；其余章节保留已有资料，将逐步补齐边界说明与挑战实验。
+      </p>
+      <div class="chapter-list">
+        <article class="chapter-row">
+          <span class="number">01</span>
+          <div>
+            <h3>哈希、区块与挖矿</h3>
+            <p>JavaScript 手写区块链，理解链接与工作量证明。</p>
+          </div>
+          <a href="04-六天实战源码/day1-simple-js-blockchain/README.md"
+            >查看实战说明 →</a
+          >
+        </article>
+        <article class="chapter-row">
+          <span class="number">02</span>
+          <div>
+            <h3>节点、分叉与共识</h3>
+            <p>Python 多节点实验；网页共识演示为简化教学模型。</p>
+          </div>
+          <a href="03-演示文稿/demo-chain.html">打开原有演示 →</a>
+        </article>
+        <article class="chapter-row">
+          <span class="number">03</span>
+          <div>
+            <h3>签名、交易与 UTXO</h3>
+            <p>从签名验证到交易输入输出；网页使用教学用简化 RSA。</p>
+          </div>
+          <a href="03-演示文稿/demo-signature.html">打开签名演示 →</a>
+        </article>
+        <article class="chapter-row">
+          <span class="number">04</span>
+          <div>
+            <h3>账户与智能合约</h3>
+            <p>比较记账模型，在 Remix 虚拟环境中运行 Solidity。</p>
+          </div>
+          <a href="04-六天实战源码/day4-smart-contracts/README.md"
+            >查看实战说明 →</a
+          >
+        </article>
+        <article class="chapter-row">
+          <span class="number">05</span>
+          <div>
+            <h3>交换、流动性与借贷</h3>
+            <p>先从新版交换实验开始；LP 与借贷目前提供本地源码。</p>
+          </div>
+          <a href="03-演示文稿/defi-exchange.html">进入新版实验 →</a>
+        </article>
+        <article class="chapter-row">
+          <span class="number">06</span>
+          <div>
+            <h3>安全与信任边界</h3>
+            <p>重入攻击与防御；思考代码、数据来源和参与者的风险。</p>
+          </div>
+          <a href="04-六天实战源码/day6-security/README.md">查看安全实验 →</a>
+        </article>
+      </div>
+      <h2 class="section-title">用于技术分享</h2>
+      <div class="portal-links">
+        <a href="03-演示文稿/blockchain-presentation.html">主演示文稿 →</a
+        ><a href="02-演讲稿/演讲稿（对外版）.html">40 分钟讲稿 →</a
+        ><a href="03-演示文稿/demo-trace.html">供应链溯源演示 →</a
+        ><a href="产品介绍.html">原资料包入口 →</a>
+      </div>
+      <p class="caption" style="margin-bottom: 35px">
+        网页实验在浏览器中计算；Python 与 Solidity
+        需要独立运行环境。原分享材料尚未完成技术表述校订，请结合源码与模型边界阅读。
+      </p>
+    </main>
+    <footer class="site-footer">
+      <span>区块链：从技术到信任</span
+      ><span>实验不是结论。改一改，再问为什么。</span>
+    </footer>
+  </body>
+</html>

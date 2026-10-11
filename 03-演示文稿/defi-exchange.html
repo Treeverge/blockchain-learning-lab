@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>交换实验 · 区块链学习实验室</title>
+    <link rel="stylesheet" href="../assets/css/lab.css" />
+    <script defer src="../assets/js/amm.js"></script>
+    <script defer src="../assets/js/exchange.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../index.html"
+        ><span class="brand-mark" aria-hidden="true">▤</span>
+        区块链学习实验室</a
+      ><span class="header-meta"
+        >LAB 01 <span class="header-divider">/</span> 去中心化金融</span
+      >
+    </header>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">THE EXCHANGE EXPERIMENT · 约 15 分钟</p>
+          <h1>
+            同样的 100，<br />为什么换不到 100<span class="blue">？</span>
+          </h1>
+          <p class="hero-copy">
+            从一次交换开始，亲手追踪每一笔资金。<br />看懂池子、价格和手续费之间的关系。
+          </p>
+        </div>
+        <aside class="hero-note">
+          <span class="note-index">你的实验任务</span>
+          <p>先预测，再操作。<br />让账本回答问题。</p>
+          <div class="note-bottom">
+            <span>无需钱包 · 无需安装</span><span>本地虚拟资产</span>
+          </div>
+        </aside>
+      </section>
+      <nav class="steps" aria-label="实验步骤">
+        <button data-step="0" aria-current="step"><span>01</span>先预测</button
+        ><button data-step="1"><span>02</span>做交换</button
+        ><button data-step="2"><span>03</span>比深度</button
+        ><button data-step="3"><span>04</span>查费用</button
+        ><button data-step="4"><span>05</span>变报价</button
+        ><button data-step="5"><span>06</span>讲明白</button>
+      </nav>
+      <section class="lesson-intro">
+        <p id="step-label" class="eyebrow">01 / 先预测</p>
+        <h2 id="step-title">池子里各有 1000，交换一定是 1:1 吗？</h2>
+        <p id="step-description">
+          池子里有 1000 A 和 1000 B。你用 100 A 换 B，手续费为
+          0.3%。先猜一个结果。
+        </p>
+      </section>
+      <section id="prediction-panel" class="prediction">
+        <div class="prediction-diagram">
+          <div>
+            <span class="token token-a">A</span><strong>1000</strong
+            ><small>池子储备</small>
+          </div>
+          <div class="diagram-equals">×<br /><small>x · y = k</small></div>
+          <div>
+            <span class="token token-b">B</span><strong>1000</strong
+            ><small>池子储备</small>
+          </div>
+        </div>
+        <fieldset class="prediction-options">
+          <legend>你觉得会收到多少 B？</legend>
+          <button data-prediction="equal">刚好 100 B</button
+          ><button data-prediction="less">少于 100 B</button
+          ><button data-prediction="more">多于 100 B</button>
+        </fieldset>
+        <p id="prediction-feedback" class="feedback" role="status">
+          先选一个答案，接着用实际交易验证。
+        </p>
+        <button id="start-experiment" class="primary" disabled>
+          用交易验证 <span aria-hidden="true">→</span>
+        </button>
+      </section>
+      <section id="workspace" hidden>
+        <div class="workbench-heading">
+          <h3>交换工作台</h3>
+          <button id="reset" class="text-button">恢复初始状态 ↺</button>
+        </div>
+        <div class="workbench">
+          <section class="trade-panel" aria-labelledby="trade-title">
+            <div class="panel-heading">
+              <h3 id="trade-title">你的交易</h3>
+              <span class="tag">模拟账户</span>
+            </div>
+            <div class="config-row">
+              <label
+                >池子深度<select id="depth">
+                  <option value="100">100 / 100</option>
+                  <option value="1000" selected>1000 / 1000</option>
+                  <option value="10000">10000 / 10000</option>
+                </select></label
+              ><label
+                >手续费<select id="fee">
+                  <option value="30">0.3%</option>
+                  <option value="0">0%</option>
+                </select></label
+              >
+            </div>
+            <p class="config-hint">切换配置会重置账本、报价和交易记录。</p>
+            <label class="field-label" for="direction">交易方向</label
+            ><select id="direction">
+              <option value="A">A → B</option>
+              <option value="B">B → A</option>
+            </select>
+            <label class="field-label" for="amount"
+              >你付出 <span id="input-token">A</span></label
+            >
+            <div class="amount-field">
+              <input
+                id="amount"
+                value="100"
+                inputmode="decimal"
+                autocomplete="off"
+                aria-describedby="amount-hint"
+              /><span id="amount-unit">A</span>
+            </div>
+            <small id="amount-hint"
+              >最多 6 位小数 · 余额 <span id="available">1000</span></small
+            >
+            <div class="presets" aria-label="快速输入">
+              <button data-amount="10">10</button
+              ><button data-amount="100">100</button
+              ><button data-amount="500">500</button>
+            </div>
+            <label class="field-label" for="tolerance"
+              >报价变化容忍度<select id="tolerance">
+                <option value="50">0.5%</option>
+                <option value="100">1%</option>
+                <option value="500">5%</option>
+              </select></label
+            >
+            <div class="quote-result">
+              <span
+                ><span id="quote-caption">报价：你将收到</span>
+                <b id="output-token">B</b></span
+              ><strong id="quoted-output">—</strong>
+              <div>
+                <span>最小接收量</span><span id="minimum-output">—</span>
+              </div>
+            </div>
+            <div class="trade-actions">
+              <button id="quote" class="secondary">获取报价</button
+              ><button id="execute" class="primary" disabled>执行交换 →</button>
+            </div>
+            <p
+              id="trade-status"
+              class="feedback"
+              role="status"
+              aria-live="polite"
+            >
+              报价不会扣款。执行成功后，账本才会改变。
+            </p>
+            <div id="intervene-panel" class="intervene" hidden>
+              <h4>让别人先交易一次</h4>
+              <p>
+                另一个模拟账户用 200
+                个同方向的输入代币先交易。你原来的报价保留，再试着执行。
+              </p>
+              <button id="intervene" class="secondary" disabled>
+                模拟抢先交易
+              </button>
+            </div>
+          </section>
+          <section class="ledger-panel" aria-labelledby="ledger-title">
+            <div class="panel-heading">
+              <h3 id="ledger-title">资金去了哪里</h3>
+              <span id="revision" class="tag">初始账本</span>
+            </div>
+            <div class="pool-visual">
+              <div class="pool-caption">
+                <span>恒定乘积池</span><span id="pool-ratio">1 A ≈ 1 B</span>
+              </div>
+              <div class="reserve-row">
+                <span class="token token-a">A</span>
+                <div>
+                  <small>A 储备</small><strong id="reserve-a">1000</strong>
+                </div>
+                <span class="reserve-flow">⇄</span>
+                <div>
+                  <small>B 储备</small><strong id="reserve-b">1000</strong>
+                </div>
+                <span class="token token-b">B</span>
+              </div>
+              <div class="reserve-track" aria-hidden="true">
+                <span id="reserve-track-a"></span>
+              </div>
+              <p>储备比例决定当前边际价格；它不等于整笔交易的成交均价。</p>
+            </div>
+            <table class="ledger-table">
+              <caption>
+                每种资产单独对账
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">资产位置</th>
+                  <th scope="col">A</th>
+                  <th scope="col">B</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">你的钱包</th>
+                  <td id="wallet-a">1000</td>
+                  <td id="wallet-b">1000</td>
+                </tr>
+                <tr>
+                  <th scope="row">池子储备</th>
+                  <td id="pool-a">1000</td>
+                  <td id="pool-b">1000</td>
+                </tr>
+                <tr>
+                  <th scope="row">另一账户</th>
+                  <td id="other-a">1000</td>
+                  <td id="other-b">1000</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row">资产总量</th>
+                  <td id="total-a">3000</td>
+                  <td id="total-b">3000</td>
+                </tr>
+              </tfoot>
+            </table>
+            <div class="account-check">
+              <span class="check-dot" aria-hidden="true"></span
+              ><span id="conservation">A、B 总量守恒 · 未发生交易</span>
+            </div>
+            <div class="receipt">
+              <p class="eyebrow">最近一次成功交易</p>
+              <p id="receipt">执行后，这里会显示输入、输出和手续费去向。</p>
+              <dl class="metrics">
+                <div>
+                  <dt>成交均价</dt>
+                  <dd id="average-price">—</dd>
+                </div>
+                <div>
+                  <dt>相对交易前边际价的差距¹</dt>
+                  <dd id="price-impact">—</dd>
+                </div>
+                <div>
+                  <dt>储备乘积 k 的变化</dt>
+                  <dd id="k-change">—</dd>
+                </div>
+              </dl>
+              <small
+                >¹ 此差距包含手续费和整数舍入，不等于报价到执行的滑点。</small
+              >
+            </div>
+          </section>
+        </div>
+      </section>
+      <section id="comparison-panel" class="comparison" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">CONTROLLED EXPERIMENT</p>
+            <h3>只改变一个条件</h3>
+          </div>
+          <span class="tag">每行都是独立的新池子</span>
+        </div>
+        <div class="comparison-controls">
+          <label
+            >比较内容<select id="compare-mode">
+              <option value="depth">同样输入，不同深度</option>
+              <option value="size">同样深度，不同交易金额</option>
+            </select></label
+          >
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>初始储备 A / B</th>
+                <th>输入 A</th>
+                <th>输出 B</th>
+                <th>成交均价 B/A</th>
+                <th>输出对比</th>
+              </tr>
+            </thead>
+            <tbody id="comparison-rows"></tbody>
+          </table>
+        </div>
+        <p class="caption">
+          所有行从 1:1
+          初始比例开始，手续费采用工作台当前设置。没有把连续交易和独立实验混在一起。
+        </p>
+      </section>
+      <section id="fee-panel" class="explanation-block" hidden>
+        <span class="explanation-number">0.3%</span>
+        <div>
+          <h3>手续费留在池子里，没有消失。</h3>
+          <p>
+            输入 100 A 时，99.7 A 用于计算报价；实际进入池子的是完整的 100
+            A。0.3 A
+            包含在池子储备中，不会再加一次。试着切换手续费，比较同一输入的输出和储备乘积变化。
+          </p>
+          <p>
+            手续费通过池子资产归属于 LP
+            份额持有人。本章只观察资金流，份额与退出留到下一章。
+          </p>
+        </div>
+      </section>
+      <section id="reflection-panel" class="reflection" hidden>
+        <p class="eyebrow">CHECK YOUR UNDERSTANDING</p>
+        <h3>把观察变成自己的解释</h3>
+        <div id="reflection-questions"></div>
+        <p id="reflection-score" class="feedback" role="status">
+          完成三个问题，再对照源码验证。
+        </p>
+      </section>
+      <section class="under-the-hood">
+        <details>
+          <summary>
+            打开计算规则与模型边界 <span aria-hidden="true">＋</span>
+          </summary>
+          <div class="details-content">
+            <h3>有效输入参与报价，完整输入进入储备</h3>
+            <p>交易前储备为 x、y，输入为 a，手续费率为 f。</p>
+            <pre>
+有效输入 e = a × (1 − f)
+输出 b = y × e / (x + e)
+实际新储备 x′ = x + a，y′ = y − b</pre
+            >
+            <p>
+              两种资产都用 6
+              位小数。程序使用整数最小单位，只在最终输出时向下取整。有手续费时 k
+              增加；无手续费时也可能因舍入略增。
+            </p>
+            <p>
+              本实验没有真实代币、网络交易、Gas、转账税、重基资产或协议抽成；外部市场价格和套利将在
+              LP 章节引入。手续费数值是实验设置，不代表所有协议。
+            </p>
+            <p>
+              <a href="../assets/js/amm.js">查看浏览器计算源码</a> ·
+              <a href="../04-六天实战源码/day5-defi/01-amm-demo.py"
+                >查看 Python 实验</a
+              >
+              ·
+              <a href="../04-六天实战源码/day5-defi/README.md"
+                >Day 5 实验说明</a
+              >
+            </p>
+          </div>
+        </details>
+      </section>
+      <div class="lesson-navigation">
+        <span id="progress-label">第 1 / 6 步</span>
+        <div>
+          <button id="previous" class="text-button" disabled>← 上一步</button
+          ><button id="next" class="secondary" disabled>下一步 →</button>
+        </div>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <span>区块链：从技术到信任</span
+      ><span>先动手，再理解。所有资产均为教学模拟。</span>
+    </footer>
+  </body>
+</html>
