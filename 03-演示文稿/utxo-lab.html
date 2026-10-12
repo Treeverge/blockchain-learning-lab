@@ -91,13 +91,15 @@
                 <option>Alice</option>
               </select></label
             >
-            <label class="field-label" for="utxo-amount"
-              >转账数量<input id="utxo-amount" inputmode="decimal" value="45"
-            /></label>
-            <label class="field-label" for="utxo-fee"
-              >手续费<input id="utxo-fee" inputmode="decimal" value="1"
-            /></label>
-            <p class="caption">
+            <label class="field-label" for="utxo-amount">转账数量</label>
+            <div class="amount-field">
+              <input id="utxo-amount" inputmode="decimal" value="45" />
+            </div>
+            <label class="field-label" for="utxo-fee">手续费</label>
+            <div class="amount-field">
+              <input id="utxo-fee" inputmode="decimal" value="1" />
+            </div>
+            <p class="config-hint">
               输入整体消耗；没转走的部分必须新建找零输出。金额最多 6 位小数。
             </p>
             <button id="utxo-draft" class="primary lp-action">
