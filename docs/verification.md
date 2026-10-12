@@ -5,7 +5,7 @@
 ## 计算与借贷账本
 
 ```powershell
-node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs
+node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs
 python -X utf8 -m unittest discover -s tests -p "test_*.py"
 ```
 
@@ -62,3 +62,9 @@ Node.js 24 下 Ganache 的原生 µWS 扩展可能不可用，工具会退回 Ja
 - 新增 7 项模型测试，完整 JavaScript 模型共 27 项。验证标准 SHA-256 向量、修改检测、修复、创世锚点、索引、真实证明、等工作不切换、更多有效工作接受、无效长链拒绝，以及取消和尝试上限不提交半成品。
 - 网页检查从修改到修复的校验变化、节点分歧、基准挖矿、重写挖矿、传播等工作分叉、追加有效块后收敛；五步手机无横向溢出、直接双击与减少动态效果。
 - 固定难度工作是期望工作单位，不是本次实际尝试次数。未启用证明的阶段不进行传播选链；不模拟交易授权、真实网络与难度调整。
+
+## 签名与 UTXO 验证（2026-10-12）
+
+- 新增 8 项 JavaScript 测试，共 35 项；Python 仍为 10 项。检查真实签名、私钥不可导出、主体全部字段绑定、缺失签名、重哈希篡改、错误所有者、多输入、找零与费用、零费无找零、非法输出和 ID、重复确认与冲突拒绝。
+- 浏览器检查未签名、篡改确认失败不扣款、Eve 签名有效但无权限、确认后 Alice 54 / Bob 95 / 费用 1、冲突拒绝后签名仍有效、反向确认顺序、零手续费、五步手机与展开长字段无横向溢出、直接双击和减少动态效果。
+- 网页 P-256 与原 Python secp256k1 不同；主体 ID 不含签名，指纹不是 Bitcoin 地址。当前只实现本地确认账本，没有真实网络共识、挖矿打包、持久化与分叉回滚。

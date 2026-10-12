@@ -432,6 +432,133 @@ const server = http.createServer((req, res) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.locator('[data-chain-step="1"]').click();
     assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.goto(base + "/03-演示文稿/utxo-lab.html");
+    await page.waitForFunction(
+      () =>
+        document.body.dataset.ready === "true" &&
+        !document.querySelector("#utxo-next").disabled,
+    );
+    const idleUTXO = () =>
+      page.waitForFunction(
+        () => !document.querySelector("#utxo-reset").disabled,
+      );
+    const checkUTXO = async (label, value) =>
+      assert.equal(
+        await page
+          .locator(".utxo-check")
+          .filter({ has: page.getByText(label, { exact: true }) })
+          .locator("strong")
+          .textContent(),
+        value,
+      );
+    await page.locator('[data-utxo-step="1"]').click();
+    await page.locator("#utxo-draft").click();
+    await idleUTXO();
+    assert.match(
+      await page.locator("#utxo-transaction").textContent(),
+      /Bob 45 \+ Alice 24/,
+    );
+    await checkUTXO("真实签名", "未通过");
+    await page.locator('[data-utxo-step="2"]').click();
+    await page.locator("#utxo-sign").click();
+    await idleUTXO();
+    await checkUTXO("真实签名", "通过");
+    await checkUTXO("输入所有者", "通过");
+    await page.locator("#utxo-tamper").click();
+    await idleUTXO();
+    await checkUTXO("内容 / ID", "通过");
+    await checkUTXO("真实签名", "未通过");
+    await page.locator('[data-utxo-step="3"]').click();
+    await page.locator("#utxo-confirm").click();
+    await idleUTXO();
+    assert.match(await page.locator("#utxo-status").textContent(), /签名/);
+    assert.equal(await page.locator("#utxo-alice").textContent(), "100");
+    await page.locator('[data-utxo-step="2"]').click();
+    await page.locator("#utxo-eve").click();
+    await idleUTXO();
+    await checkUTXO("真实签名", "通过");
+    await checkUTXO("输入所有者", "未通过");
+    await page.locator("#utxo-restore").click();
+    await idleUTXO();
+    await page.locator('[data-utxo-step="3"]').click();
+    await page.locator("#utxo-confirm").click();
+    await idleUTXO();
+    assert.equal(await page.locator("#utxo-alice").textContent(), "54");
+    assert.equal(await page.locator("#utxo-bob").textContent(), "95");
+    assert.equal(await page.locator("#utxo-fees").textContent(), "1");
+    assert.equal(
+      await page.locator("#utxo-tx-tag").textContent(),
+      "已确认，输入已消耗",
+    );
+    await checkUTXO("真实签名", "通过");
+    await page.locator('[data-utxo-step="4"]').click();
+    await page.locator("#utxo-second").click();
+    await idleUTXO();
+    assert.match(await page.locator("#utxo-status").textContent(), /已花费/);
+    await checkUTXO("真实签名", "通过");
+    await checkUTXO("未花费输入", "未通过");
+    assert.equal(
+      await page.locator("#utxo-confirmed").textContent(),
+      "确认 1 笔",
+    );
+    assert.equal(await page.locator("#utxo-fees").textContent(), "1");
+    await page.screenshot({
+      path: path.join(screenshots, "utxo-desktop.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (let i = 0; i < 5; i++) {
+      await page.locator(`[data-utxo-step="${i}"]`).click();
+      assert.ok(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+        `UTXO overflow at step ${i}`,
+      );
+    }
+    await page
+      .locator("#utxo-transaction details")
+      .evaluateAll((nodes) => nodes.forEach((n) => (n.open = true)));
+    assert.ok(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+      "expanded signature fields must fit mobile",
+    );
+    await page.screenshot({
+      path: path.join(screenshots, "utxo-mobile.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.goto(
+      "file:///" +
+        path.join(root, "03-演示文稿", "utxo-lab.html").replaceAll("\\", "/"),
+    );
+    await page.waitForFunction(
+      () =>
+        document.body.dataset.ready === "true" &&
+        !document.querySelector("#utxo-next").disabled,
+    );
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.locator('[data-utxo-step="1"]').click();
+    await page.locator("#utxo-fee").fill("0");
+    await page.locator("#utxo-draft").click();
+    await idleUTXO();
+    await page.locator('[data-utxo-step="2"]').click();
+    await page.locator("#utxo-sign").click();
+    await idleUTXO();
+    await page.locator('[data-utxo-step="4"]').click();
+    await page.locator("#utxo-second").click();
+    await idleUTXO();
+    assert.equal(await page.locator("#utxo-eve-balance").textContent(), "45");
+    await page.locator("#utxo-first").click();
+    await idleUTXO();
+    assert.match(await page.locator("#utxo-status").textContent(), /已花费/);
+    assert.equal(await page.locator("#utxo-fees").textContent(), "0");
+    assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
     assert.deepEqual(errors, []);
     const delayed = await browser.newPage();
     let releaseScript;
@@ -471,7 +598,7 @@ const server = http.createServer((req, res) => {
     );
     await delayed.close();
     console.log(
-      "Browser QA passed: desktop/mobile, integer quote, balances, errors, comparison, fee change, stale quote, quiz, file URL, no overflow or page errors.",
+      "Browser QA passed: exchange, LP, lending, chain selection and real signatures/UTXO; desktop/mobile, file URLs, reduced motion, no overflow or page errors.",
     );
   } finally {
     if (browser) await browser.close();

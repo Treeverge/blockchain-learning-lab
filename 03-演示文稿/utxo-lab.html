@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>数字签名与 UTXO · 区块链学习实验室</title>
+    <link rel="stylesheet" href="../assets/css/lab.css" />
+    <script defer src="../assets/js/amm.js"></script>
+    <script defer src="../assets/js/chain.js"></script>
+    <script defer src="../assets/js/utxo.js"></script>
+    <script defer src="../assets/js/utxo-lab.js"></script>
+  </head>
+  <body data-ready="false">
+    <header class="site-header">
+      <a class="brand" href="../index.html"
+        ><span class="brand-mark" aria-hidden="true">▤</span>区块链学习实验室</a
+      ><span class="header-meta">LAB 05 / 签名与 UTXO</span>
+    </header>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">THE AUTHORIZATION EXPERIMENT · 约 15 分钟</p>
+          <h1>哈希可以重算，<br />谁能替你签名<span class="blue">？</span></h1>
+          <p class="hero-copy">
+            用真实签名检查授权，用 UTXO 追踪花费。<br />一份签名有效的交易，为什么仍会被拒绝？
+          </p>
+        </div>
+        <aside class="hero-note">
+          <span class="note-index">这次，尝试花两次</span>
+          <p>验证谁授权。<br />再检查钱还在不在。</p>
+          <div class="note-bottom">
+            <span>真实 ECDSA · 本地确认账本</span
+            ><span>临时密钥 · 虚拟资产</span>
+          </div>
+        </aside>
+      </section>
+      <p id="utxo-loading" class="feedback" role="status">
+        正在生成三组临时密钥，请稍候。
+      </p>
+      <noscript><p>请启用 JavaScript，或阅读 Day 3 本地源码。</p></noscript>
+      <nav class="steps lending-steps" aria-label="签名实验步骤">
+        <button data-utxo-step="0" disabled><span>01</span>看身份</button
+        ><button data-utxo-step="1" disabled><span>02</span>选输入</button
+        ><button data-utxo-step="2" disabled><span>03</span>签名验证</button
+        ><button data-utxo-step="3" disabled><span>04</span>确认交易</button
+        ><button data-utxo-step="4" disabled><span>05</span>尝试双花</button>
+      </nav>
+      <section class="lesson-intro">
+        <p id="utxo-step-label" class="eyebrow">01 / 看身份</p>
+        <h2 id="utxo-title">公钥是身份，私钥授权花费。</h2>
+        <p id="utxo-description">
+          余额是当前未花费输出的合计。知道某个人的公钥，不等于可以替他授权。
+        </p>
+      </section>
+      <div class="workbench-heading">
+        <h3>交易授权工作台</h3>
+        <button id="utxo-reset" class="text-button" disabled>
+          重置密钥与账本 ↺
+        </button>
+      </div>
+      <div class="workbench">
+        <section class="trade-panel">
+          <div class="panel-heading">
+            <h3 id="utxo-control-title">三个临时身份</h3>
+            <span class="tag">P-256 / SHA-256</span>
+          </div>
+          <section id="utxo-identity-panel">
+            <p>
+              Alice 有 30 与 70 两笔未花费输出，Bob 有 50。Eve
+              是尝试越权的第三个角色。
+            </p>
+            <div id="utxo-identities" class="utxo-identities"></div>
+            <p class="caption">
+              私钥由浏览器生成，设为不可导出，不写入文件或存储。公钥可以公开；指纹是公钥十六进制字符串的
+              SHA-256。
+            </p>
+            <p class="caption">
+              页面控制了三个演示角色。这不是安全钱包，也不处理真实资产；重置或刷新会丢失所有密钥与交易。
+            </p>
+          </section>
+          <section id="utxo-input-panel" hidden>
+            <fieldset class="utxo-input-fieldset">
+              <legend class="field-label">花费 Alice 的哪些输出？</legend>
+              <div id="utxo-inputs"></div>
+            </fieldset>
+            <p id="utxo-selected" class="config-hint"></p>
+            <label class="field-label" for="utxo-recipient"
+              >收款人<select id="utxo-recipient">
+                <option>Bob</option>
+                <option>Eve</option>
+                <option>Alice</option>
+              </select></label
+            >
+            <label class="field-label" for="utxo-amount"
+              >转账数量<input id="utxo-amount" inputmode="decimal" value="45"
+            /></label>
+            <label class="field-label" for="utxo-fee"
+              >手续费<input id="utxo-fee" inputmode="decimal" value="1"
+            /></label>
+            <p class="caption">
+              输入整体消耗；没转走的部分必须新建找零输出。金额最多 6 位小数。
+            </p>
+            <button id="utxo-draft" class="primary lp-action">
+              生成交易草稿 →
+            </button>
+          </section>
+          <section id="utxo-sign-panel" hidden>
+            <p>先用 Alice 签名，再分别尝试改内容和换签名人。</p>
+            <button id="utxo-sign" class="primary lp-action" disabled>
+              Alice 签署当前交易 →
+            </button>
+            <button id="utxo-tamper" class="secondary lp-action" disabled>
+              改收款人，重算 ID，保留旧签名
+            </button>
+            <button id="utxo-eve" class="secondary lp-action" disabled>
+              Eve 签署原交易
+            </button>
+            <button id="utxo-restore" class="text-button lp-action" disabled>
+              恢复 Alice 的原签名交易
+            </button>
+            <p class="caption">
+              签名绑定全部输入引用、所有输出金额与归属、手续费。重算 ID
+              不会重签；Eve 能生成有效签名，但不是输入所有者。
+            </p>
+          </section>
+          <section id="utxo-confirm-panel" hidden>
+            <p>
+              预测：消耗 70 后，Alice 会剩多少？Bob 会收到多少？费用去哪了？
+            </p>
+            <button id="utxo-confirm" class="primary lp-action" disabled>
+              确认当前交易，更新账本 →
+            </button>
+            <p class="caption">
+              只有所有校验通过才会修改账本。手续费进入演示费用账户；这里没有真实矿工打包或区块奖励。
+            </p>
+          </section>
+          <section id="utxo-conflict-panel" hidden>
+            <p>
+              Alice
+              签名时会准备两份收款人不同、输入相同的候选。签名可以同时有效，但不能在同一个确认账本里都花出去。
+            </p>
+            <button id="utxo-first" class="secondary lp-action" disabled>
+              尝试确认原候选
+            </button>
+            <button id="utxo-second" class="primary lp-action" disabled>
+              尝试确认冲突候选 →
+            </button>
+            <p class="caption">
+              如果上一步已确认原交易，这里的第二份会因输入已消耗而拒绝。重置后也可先确认第二份，再尝试第一份。
+            </p>
+          </section>
+          <p
+            id="utxo-status"
+            class="feedback lp-status"
+            role="status"
+            aria-live="polite"
+          >
+            准备中。
+          </p>
+        </section>
+        <section class="ledger-panel">
+          <div class="panel-heading">
+            <h3>未花费输出 · 当前账本</h3>
+            <span id="utxo-confirmed" class="tag">确认 0 笔</span>
+          </div>
+          <div class="table-scroll">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>归属</th>
+                  <th>未花费数量</th>
+                  <th>输出引用</th>
+                </tr>
+              </thead>
+              <tbody id="utxo-ledger"></tbody>
+            </table>
+          </div>
+          <div class="utxo-balances">
+            <div><span>Alice</span><strong id="utxo-alice">100</strong></div>
+            <div><span>Bob</span><strong id="utxo-bob">50</strong></div>
+            <div><span>Eve</span><strong id="utxo-eve-balance">0</strong></div>
+            <div><span>费用账户</span><strong id="utxo-fees">0</strong></div>
+          </div>
+          <p id="utxo-conservation" class="caption">初始总量 150。</p>
+          <div class="utxo-transaction">
+            <div class="panel-heading">
+              <h3>当前交易</h3>
+              <span id="utxo-tx-tag" class="tag">尚无草稿</span>
+            </div>
+            <div id="utxo-transaction">
+              <p class="caption">到第二步选择输入，生成一份交易。</p>
+            </div>
+          </div>
+        </section>
+      </div>
+      <section class="lp-comparison">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">CHECK EACH LAYER</p>
+            <h3>验签通过，只回答了其中一个问题。</h3>
+          </div>
+          <span class="tag">以当前账本校验</span>
+        </div>
+        <div id="utxo-checks" class="utxo-checks"></div>
+        <p id="utxo-check-note" class="caption">
+          先生成交易，再观察每一层校验。
+        </p>
+        <div id="utxo-candidates" class="utxo-candidates" hidden></div>
+      </section>
+      <section class="reflection borrowing-reflection">
+        <p class="eyebrow">把两个实验连起来</p>
+        <h3>本地拒绝双花之后，网络还要解决什么？</h3>
+        <p>
+          这里按确认顺序消耗
+          UTXO。真实网络的不同节点可能先收到不同交易，需要共识决定接受哪段历史；签名不会替网络选择胜者。
+        </p>
+        <details class="utxo-answer">
+          <summary>试着回答，再展开解释</summary>
+          <p>
+            重算哈希只能让 ID
+            与内容对应；签名检查内容是否获密钥授权；所有者检查这个密钥能否花该输入；UTXO
+            检查输入是否还未花费；共识让节点对确认历史收敛。它们各自解决不同的问题。
+          </p>
+        </details>
+      </section>
+      <section class="under-the-hood">
+        <details>
+          <summary>
+            计算规则与模型边界 <span aria-hidden="true">＋</span>
+          </summary>
+          <div class="details-content">
+            <p>
+              使用原生 Web Crypto ECDSA P-256 / SHA-256。Day 3 Python 使用
+              secp256k1，本网页不是比特币交易、签名或脚本实现。身份指纹不是比特币地址；教学
+              ID 只取交易主体的 SHA-256，不包含签名，与 Bitcoin txid / wtxid
+              不同。
+            </p>
+            <p>
+              主体固定编码为 ["UTXO-LAB-v1", 输入引用数组, [归属指纹,
+              整数金额字符串] 输出数组, 手续费字符串]，使用 UTF-8
+              JSON。所有输入对同一完整主体签名；同一发送者的签名可用于多个输入。金额以
+              6 位精度整数计算。
+            </p>
+            <p>
+              签名使用浏览器 ECDSA 的 64
+              字节原始格式。创始输出是实验种子；费用归集只是对账规则。省略
+              Bitcoin
+              脚本、真实网络、区块确认、coinbase、持久化、分叉回滚及手续费市场。
+            </p>
+            <p>
+              <a href="../assets/js/utxo.js">查看签名与账本模型</a> ·
+              <a href="chain-lab.html">回到哈希与选链实验</a> ·
+              <a href="../04-六天实战源码/day3-signatures-utxo/README.md"
+                >Day 3 本地实战</a
+              >
+            </p>
+          </div>
+        </details>
+      </section>
+      <div class="lesson-navigation">
+        <span id="utxo-progress">第 1 / 5 步</span>
+        <div>
+          <button id="utxo-prev" class="text-button" disabled>← 上一步</button
+          ><button id="utxo-next" class="secondary" disabled>下一步 →</button>
+        </div>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <span>区块链：从技术到信任</span
+      ><span>内容、授权、未花费状态与共识，分别验证。</span>
+    </footer>
+  </body>
+</html>
