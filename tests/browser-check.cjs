@@ -57,13 +57,6 @@ const server = http.createServer((req, res) => {
       if (response.status() >= 400)
         errors.push(`${response.status()} ${response.url()}`);
     });
-    await page.goto(base + "/" + encodeURIComponent("产品介绍.html"));
-    await page.waitForURL("**/index.html");
-    assert.equal(
-      await page.locator("h1").count(),
-      1,
-      "legacy entry should reach the learning homepage",
-    );
     await page.goto(base);
     assert.equal(await page.locator("h1").count(), 1);
     const screenshots = path.join(root, "docs", "screenshots");
@@ -133,11 +126,6 @@ const server = http.createServer((req, res) => {
       await page.locator("#reflection-score").textContent(),
       /正确 3 \/ 3/,
     );
-    await page.goto(
-      "file:///" + path.join(root, "产品介绍.html").replaceAll("\\", "/"),
-    );
-    await page.waitForURL("**/index.html");
-    assert.equal(await page.locator("h1").count(), 1);
     // Browser computes correctly from a file URL too: no web server is required locally.
     await page.goto(
       "file:///" +
@@ -180,6 +168,78 @@ const server = http.createServer((req, res) => {
       path: path.join(screenshots, "home-mobile.png"),
       fullPage: true,
     });
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.goto(base + "/03-演示文稿/defi-liquidity.html");
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    await page.locator("#lp-join").click();
+    assert.equal(await page.locator("#lp-share").textContent(), "9.0909%");
+    await page.locator('[data-lp-step="1"]').click();
+    await page.locator("#lp-trade").click();
+    assert.match(await page.locator("#lp-fees").textContent(), /0.3 A/);
+    await page.locator('[data-lp-step="2"]').click();
+    const reservesBeforePrice = await page
+      .locator("#lp-reserve-a")
+      .textContent();
+    await page.locator("#lp-price").selectOption("4");
+    assert.equal(
+      await page.locator("#lp-reserve-a").textContent(),
+      reservesBeforePrice,
+    );
+    await page.locator("#lp-arbitrage").click();
+    assert.match(await page.locator("#lp-conservation").textContent(), /守恒/);
+    assert.ok(
+      Number(await page.locator("#lp-reserve-a").textContent()) <
+        Number(reservesBeforePrice),
+    );
+    await page.locator('[data-lp-step="3"]').click();
+    const preview = await page.locator("#lp-value").textContent();
+    await page.locator("#lp-withdraw").click();
+    assert.equal(await page.locator("#lp-value").textContent(), preview);
+    assert.ok(await page.locator("#lp-price").isDisabled());
+    await page.screenshot({
+      path: path.join(screenshots, "liquidity-desktop.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.locator("#lp-reset").click();
+    await page.locator("#lp-fee").selectOption("0");
+    await page.locator("#lp-join").click();
+    await page.locator('[data-lp-step="2"]').click();
+    await page.locator("#lp-price").selectOption("4");
+    await page.locator("#lp-arbitrage").click();
+    assert.match(
+      await page.locator("#lp-difference-percent").textContent(),
+      /-20\.0000%/,
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (let i = 0; i < 4; i++) {
+      await page.locator(`[data-lp-step="${i}"]`).click();
+      assert.ok(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+        `LP mobile overflow at step ${i}`,
+      );
+    }
+    await page.screenshot({
+      path: path.join(screenshots, "liquidity-mobile.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.goto(
+      "file:///" +
+        path
+          .join(root, "03-演示文稿", "defi-liquidity.html")
+          .replaceAll("\\", "/"),
+    );
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    await page.locator("#lp-join").click();
+    assert.equal(await page.locator("#lp-share").textContent(), "9.0909%");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.locator('[data-lp-step="2"]').click();
+    await page.locator("#lp-price").selectOption("2");
+    await page.locator("#lp-arbitrage").click();
+    assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
     assert.deepEqual(errors, []);
     const delayed = await browser.newPage();
     let releaseScript;

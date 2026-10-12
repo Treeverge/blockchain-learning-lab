@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>流动性实验 · 区块链学习实验室</title>
+    <link rel="stylesheet" href="../assets/css/lab.css" />
+    <script defer src="../assets/js/amm.js"></script>
+    <script defer src="../assets/js/lp.js"></script>
+    <script defer src="../assets/js/liquidity.js"></script>
+  </head>
+  <body data-ready="false">
+    <header class="site-header">
+      <a class="brand" href="../index.html"
+        ><span class="brand-mark" aria-hidden="true">▤</span>区块链学习实验室</a
+      ><span class="header-meta">LAB 02 / 流动性提供者</span>
+    </header>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">THE LIQUIDITY EXPERIMENT · 约 15 分钟</p>
+          <h1>
+            赚了手续费，<br />为什么还可能少赚<span class="blue">？</span>
+          </h1>
+          <p class="hero-copy">
+            把自己放在资金提供者的位置。<br />从加入池子，到退出与持有的比较。
+          </p>
+        </div>
+        <aside class="hero-note">
+          <span class="note-index">这次，你是 LP</span>
+          <p>你提供资产。<br />谁来承担价格变化？</p>
+          <div class="note-bottom">
+            <span>先完成交换实验，再来这里</span
+            ><a href="defi-exchange.html">回到交换实验 →</a>
+          </div>
+        </aside>
+      </section>
+      <p id="lp-loading" class="feedback" role="status">
+        正在准备实验，请稍候；若未完成，可刷新或本地打开。
+      </p>
+      <noscript><p>请启用 JavaScript，或下载资料阅读本地源码。</p></noscript>
+      <nav class="steps lp-steps" aria-label="流动性实验步骤">
+        <button data-lp-step="0" disabled><span>01</span>加入池子</button
+        ><button data-lp-step="1" disabled><span>02</span>观察手续费</button
+        ><button data-lp-step="2" disabled><span>03</span>价格与套利</button
+        ><button data-lp-step="3" disabled><span>04</span>退出与比较</button>
+      </nav>
+      <section class="lesson-intro">
+        <p id="lp-step-label" class="eyebrow">01 / 加入池子</p>
+        <h2 id="lp-step-title">投入 100 A 和 100 B，你拥有池子的多少？</h2>
+        <p id="lp-step-description">
+          初始 LP 已经投入各 1000 个资产。你的份额，要除以加入后整个池子的规模。
+        </p>
+      </section>
+      <div class="workbench-heading">
+        <h3>流动性工作台</h3>
+        <button id="lp-reset" class="text-button">重置整个情景 ↺</button>
+      </div>
+      <div class="workbench">
+        <section class="trade-panel">
+          <div class="panel-heading">
+            <h3 id="lp-control-title">加入流动性</h3>
+            <span id="lp-position-tag" class="tag">尚未投入</span>
+          </div>
+          <section id="lp-join-panel">
+            <label class="field-label" for="lp-deposit"
+              >每种资产投入多少？</label
+            >
+            <div class="amount-field">
+              <input
+                id="lp-deposit"
+                value="100"
+                inputmode="decimal"
+                aria-describedby="lp-deposit-hint"
+              /><span>A + B</span>
+            </div>
+            <small id="lp-deposit-hint"
+              >每种资产投入 1 至 1000 个；按 1:1 初始比例投入。</small
+            ><label class="field-label" for="lp-fee"
+              >情景费率<select id="lp-fee">
+                <option value="30">0.3%</option>
+                <option value="0">0%（对照实验）</option>
+              </select></label
+            >
+            <p class="config-hint">
+              费率在加入前选择，加入后固定。重置可比较另一个情景。
+            </p>
+            <button id="lp-join" class="primary lp-action" disabled>
+              投入资产，获得份额 →
+            </button>
+          </section>
+          <section id="lp-trade-panel" hidden>
+            <label class="field-label" for="lp-direction"
+              >普通交易者的交易方向<select id="lp-direction">
+                <option value="A">用 A 换 B</option>
+                <option value="B">用 B 换 A</option>
+              </select></label
+            ><label class="field-label" for="lp-trade-amount">输入金额</label>
+            <div class="amount-field">
+              <input
+                id="lp-trade-amount"
+                value="100"
+                inputmode="decimal"
+              /><span id="lp-trade-token">A</span>
+            </div>
+            <p class="config-hint">
+              交易者有自己的资产账本；每笔交易的完整输入进入池子。
+            </p>
+            <button id="lp-trade" class="primary lp-action">
+              执行一笔普通交易 →
+            </button>
+            <p class="caption">
+              可以多次交易。不同交易路径会影响累计手续费和最终资产组成。
+            </p>
+          </section>
+          <section id="lp-price-panel" hidden>
+            <label class="field-label" for="lp-price"
+              >外部市场：1 A 值多少 B？<select id="lp-price">
+                <option value="0.5">0.5 B（价格减半）</option>
+                <option value="1" selected>1 B（初始价格）</option>
+                <option value="2">2 B（价格翻倍）</option>
+                <option value="4">4 B（价格变为四倍）</option>
+              </select></label
+            >
+            <p class="config-hint">
+              改变参考价格不会直接改池子余额。点击下面的按钮，观察实际套利交易。
+            </p>
+            <button id="lp-arbitrage" class="primary lp-action">
+              模拟套利，使池价靠近市场 →
+            </button>
+            <p id="lp-arbitrage-note" class="caption">
+              套利账户使用真实模拟资金：在一边买入，在另一边卖出。池子手续费从收益中扣除。
+            </p>
+          </section>
+          <section id="lp-exit-panel" hidden>
+            <p>
+              退出时，按你的份额取回池子里<strong>当前</strong>的两种资产，而非最初投入的固定数量。
+            </p>
+            <button id="lp-withdraw" class="primary lp-action">
+              退出池子，取回资产 →
+            </button>
+            <p class="caption">
+              退出后冻结情景。重置可以比较另一种价格、费率和交易路径。
+            </p>
+          </section>
+          <p
+            id="lp-status"
+            class="feedback lp-status"
+            role="status"
+            aria-live="polite"
+          >
+            先猜一下：投入 100 + 100，是 10% 还是约 9.09%？
+          </p>
+        </section>
+        <section class="ledger-panel">
+          <div class="panel-heading">
+            <h3>你的资产份额</h3>
+            <span id="lp-revision" class="tag">初始账本</span>
+          </div>
+          <div class="pool-visual">
+            <div class="pool-caption">
+              <span>池内边际价格</span><span id="lp-pool-price">1 A ≈ 1 B</span>
+            </div>
+            <div class="reserve-row">
+              <span class="token token-a">A</span>
+              <div>
+                <small>A 储备</small><strong id="lp-reserve-a">1000</strong>
+              </div>
+              <span class="reserve-flow">⇄</span>
+              <div>
+                <small>B 储备</small><strong id="lp-reserve-b">1000</strong>
+              </div>
+              <span class="token token-b">B</span>
+            </div>
+            <div class="reserve-track" aria-hidden="true">
+              <span id="lp-track"></span>
+            </div>
+            <p>
+              外部参考价：<strong id="lp-market-price">1 B / A</strong
+              >。池内价格由储备决定。
+            </p>
+          </div>
+          <div class="lp-ownership">
+            <div>
+              <span>你的 LP 份额</span><strong id="lp-share">0%</strong>
+            </div>
+            <div>
+              <span>份额数量 / 总份额</span><span id="lp-shares">0 / 1000</span>
+            </div>
+            <div class="ownership-track" aria-hidden="true">
+              <span id="lp-share-track"></span>
+            </div>
+          </div>
+          <table class="ledger-table">
+            <caption id="lp-claim-caption">
+              这份份额现在能退出多少资产？
+            </caption>
+            <thead>
+              <tr>
+                <th>资产位置</th>
+                <th>A</th>
+                <th>B</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>你的钱包</th>
+                <td id="lp-wallet-a">1000</td>
+                <td id="lp-wallet-b">1000</td>
+              </tr>
+              <tr>
+                <th id="lp-claim-label">可退出资产</th>
+                <td id="lp-claim-a">—</td>
+                <td id="lp-claim-b">—</td>
+              </tr>
+              <tr>
+                <th>投入时的资产</th>
+                <td id="lp-held-a">—</td>
+                <td id="lp-held-b">—</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="receipt">
+            <p class="eyebrow">累计手续费 · 整个池子的留池流水</p>
+            <p id="lp-fees">0 A + 0 B</p>
+            <p class="caption">
+              手续费已包含在储备和退出价值里。这里是流水统计，不再加到收益上，也不代表你独享全部费用。
+            </p>
+          </div>
+        </section>
+      </div>
+      <section id="lp-comparison" class="lp-comparison" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">SAME ASSETS · SAME MARKET PRICE</p>
+            <h3 id="lp-value-title">如果现在退出，与直接持有相比</h3>
+          </div>
+          <span id="lp-value-price" class="tag">按外部价计价，单位 B</span>
+        </div>
+        <div class="value-comparison">
+          <div>
+            <span>提供流动性</span><strong id="lp-value">—</strong
+            ><small>对应本次投入的可退出资产</small>
+          </div>
+          <div>
+            <span>原样持有同批资产</span><strong id="lp-hold-value">—</strong
+            ><small>最初投入的 A、B 数量不变</small>
+          </div>
+          <div class="value-difference">
+            <span>相对持有的差距</span><strong id="lp-difference">—</strong
+            ><small id="lp-difference-percent">—</small>
+          </div>
+        </div>
+        <p id="lp-result-explanation" class="caption">
+          比较只针对本次投入，不包含钱包里未投入的资产。
+        </p>
+        <div class="lp-reference">
+          <span>无手续费、无额外交易的理想参考</span
+          ><strong id="lp-ideal">0%</strong
+          ><small
+            >2√r / (1+r) − 1；r
+            为相对初始价格倍数。实际情景包含手续费、交易路径和舍入，可能与参考不同。</small
+          >
+        </div>
+      </section>
+      <section class="under-the-hood">
+        <details>
+          <summary>
+            对账：资金来源与模型边界 <span aria-hidden="true">＋</span>
+          </summary>
+          <div class="details-content">
+            <h3>价格改变价值，不凭空改变资产数量。</h3>
+            <p>
+              初始
+              LP、交易者、你的钱包、套利账户和外部市场都有明确资产。下面对账表只统计持有资产的位置；LP
+              份额是池子资产的索取权，不能再次计入总资产。
+            </p>
+            <div class="table-scroll">
+              <table class="ledger-table">
+                <thead>
+                  <tr>
+                    <th>账本位置</th>
+                    <th>A</th>
+                    <th>B</th>
+                  </tr>
+                </thead>
+                <tbody id="lp-audit-rows"></tbody>
+                <tfoot>
+                  <tr>
+                    <th>资产总量</th>
+                    <td id="lp-total-a"></td>
+                    <td id="lp-total-b"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <p id="lp-conservation" class="feedback success">
+              每种资产分别守恒。
+            </p>
+            <p>
+              外部市场采用固定报价的教学近似，有有限的资产余额；套利规模由连续模型候选取整，只有实际利润为正才执行。省略
+              Gas、外部交易费、竞争、价格冲击和真实预言机。池价因费用可能停在参考价附近，不必完全相等。
+            </p>
+            <p>
+              网页版初始 LP 不退出，省略 Solidity
+              示例中的最小锁定份额。这里只提供一个用户头寸，退出后冻结情景；不代表完整协议。相对持有的差距并不等于本金亏损。费用可能缓解差距，也可能超过差距，具体看交易路径。
+            </p>
+            <p>
+              <a href="../assets/js/lp.js">查看 LP 模型</a> ·
+              <a href="../assets/js/amm.js">查看共同报价规则</a> ·
+              <a href="../04-六天实战源码/day5-defi/README.md">运行本地实验</a>
+            </p>
+          </div>
+        </details>
+      </section>
+      <div class="lesson-navigation">
+        <span id="lp-progress">第 1 / 4 步</span>
+        <div>
+          <button id="lp-prev" class="text-button" disabled>← 上一步</button
+          ><button id="lp-next" class="secondary" disabled>下一步 →</button>
+        </div>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <span>区块链：从技术到信任</span
+      ><span>手续费不是收益保证。让账本回答问题。</span>
+    </footer>
+    <script>
+      setTimeout(function () {
+        if (document.body.dataset.ready !== "true")
+          document.getElementById("lp-loading").textContent =
+            "实验未能加载完成，请刷新重试，或下载资料后本地打开。";
+      }, 15000);
+    </script>
+  </body>
+</html>

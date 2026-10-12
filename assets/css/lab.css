@@ -1191,3 +1191,125 @@ pre {
     animation: none !important;
   }
 }
+
+.lp-steps {
+  grid-template-columns: repeat(4, 1fr);
+}
+.featured a.featured-next {
+  display: block;
+  padding: 0;
+  margin-top: 18px;
+  background: transparent;
+  color: #d5e0ff;
+  font-size: 12px;
+  font-weight: normal;
+}
+.lp-action {
+  width: 100%;
+  margin-top: 22px;
+  font-size: 13px;
+}
+.lp-status {
+  margin-top: 20px;
+}
+.lp-ownership {
+  margin: 24px 0;
+}
+.lp-ownership > div:not(.ownership-track) {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.lp-ownership strong {
+  font: 24px var(--mono);
+  color: var(--blue);
+}
+.lp-ownership > div > span:last-child {
+  font-family: var(--mono);
+}
+.ownership-track {
+  height: 5px;
+  background: #e6e9e3;
+  overflow: hidden;
+}
+.ownership-track span {
+  display: block;
+  height: 100%;
+  background: var(--blue);
+  transition: width 350ms;
+}
+.lp-comparison {
+  margin-top: 26px;
+  padding: 28px;
+  background: white;
+  border: 1px solid var(--line);
+}
+.value-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+  margin: 28px 0 18px;
+}
+.value-comparison > div {
+  min-width: 0;
+}
+.value-comparison span,
+.value-comparison small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+.value-comparison strong {
+  display: block;
+  font: 25px/1.6 var(--mono);
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.value-difference {
+  border-left: 1px solid var(--line);
+  padding-left: 24px;
+}
+.value-negative {
+  color: var(--orange);
+}
+.value-positive {
+  color: var(--green);
+}
+.lp-reference {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding-top: 18px;
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+}
+.lp-reference strong {
+  font: 19px var(--mono);
+}
+.lp-reference small {
+  display: block;
+  width: 100%;
+}
+@media (max-width: 680px) {
+  .lp-comparison {
+    padding: 22px 18px;
+  }
+  .value-comparison {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .value-difference {
+    border-left: 0;
+    padding-left: 0;
+    padding-top: 15px;
+    border-top: 1px solid var(--line);
+  }
+  .value-comparison strong {
+    font-size: 25px;
+    margin: 3px 0;
+  }
+}

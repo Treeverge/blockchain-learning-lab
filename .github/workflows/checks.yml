@@ -16,6 +16,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: node --test tests/amm.test.cjs
+      - run: node --test tests/amm.test.cjs tests/lp.test.cjs
       - run: python -m unittest discover -s tests -p 'test_*.py'
       - run: node --check assets/js/exchange.js
+      - run: node --check assets/js/liquidity.js
