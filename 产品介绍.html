@@ -1,237 +1,28 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>《区块链：从技术到信任》数字资料包</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{font-size:16px}
-body{
-  font-family:"PingFang SC","Microsoft YaHei","Sora",-apple-system,sans-serif;
-  background:
-    radial-gradient(1200px 500px at 85% -10%, rgba(212,175,106,.14), transparent 60%),
-    radial-gradient(900px 420px at -10% 20%, rgba(79,142,247,.12), transparent 55%),
-    #0e1626;
-  color:#e8eef7;
-  line-height:1.75;
-  min-height:100vh;
-}
-.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px;}
-
-/* ===== Hero ===== */
-.hero{padding:88px 0 56px;text-align:center;}
-.badge{
-  display:inline-flex;align-items:center;gap:8px;
-  border:1px solid rgba(212,175,106,.4);color:#d4af6a;
-  padding:6px 16px;border-radius:999px;font-size:.82rem;letter-spacing:.12em;
-  background:rgba(212,175,106,.08);margin-bottom:28px;
-}
-.badge .dot{width:7px;height:7px;border-radius:50%;background:#d4af6a;box-shadow:0 0 10px #d4af6a;}
-h1{
-  font-size:clamp(2.2rem,5.5vw,3.4rem);
-  font-weight:700;letter-spacing:.02em;line-height:1.25;
-  background:linear-gradient(120deg,#ffe9b0 0%,#d4af6a 45%,#a8833f 100%);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-}
-.sub{font-size:clamp(1rem,2.4vw,1.25rem);color:#93a4bd;margin-top:14px;}
-.tagline{margin-top:22px;font-size:1.05rem;color:#c9d4e4;max-width:640px;margin-left:auto;margin-right:auto;}
-
-.stats{display:flex;justify-content:center;gap:16px;margin-top:40px;flex-wrap:wrap;}
-.stat{
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
-  border-radius:14px;padding:14px 28px;min-width:120px;
-}
-.stat b{display:block;font-size:1.7rem;color:#d4af6a;font-family:"JetBrains Mono",monospace;}
-.stat span{font-size:.82rem;color:#93a4bd;}
-
-/* ===== Sections ===== */
-h2.sec{
-  display:flex;align-items:center;gap:14px;
-  font-size:1.45rem;color:#ffe9b0;margin:72px 0 28px;
-}
-h2.sec::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(212,175,106,.45),transparent);}
-.sec-num{
-  font-family:"JetBrains Mono",monospace;font-size:.85rem;color:#0e1626;
-  background:#d4af6a;border-radius:8px;padding:4px 10px;font-weight:600;
-}
-
-.grid{display:grid;gap:18px;}
-.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));}
-.g3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr));}
-.g6{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
-
-.card{
-  display:block;position:relative;overflow:hidden;
-  background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.02));
-  border:1px solid rgba(255,255,255,.1);border-radius:16px;
-  padding:26px 24px;text-decoration:none;color:#e8eef7;
-  transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
-}
-.card:hover{transform:translateY(-4px);border-color:rgba(212,175,106,.55);box-shadow:0 14px 40px rgba(0,0,0,.35);}
-.card .icon{font-size:1.8rem;margin-bottom:12px;}
-.card h3{font-size:1.1rem;color:#ffe9b0;margin-bottom:6px;}
-.card p{font-size:.88rem;color:#93a4bd;}
-.card .tag{
-  display:inline-block;margin-top:12px;font-size:.75rem;color:#d4af6a;
-  border:1px solid rgba(212,175,106,.35);border-radius:999px;padding:2px 10px;
-}
-.card.demo{border-left:3px solid #4f8ef7;}
-.card.demo h3{color:#8fb7ff;}
-.card.day{border-left:3px solid rgba(212,175,106,.5);}
-.card.day h3{font-size:.98rem;}
-
-/* ===== 路径 ===== */
-.paths{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
-.path{
-  background:rgba(255,255,255,.035);border:1px dashed rgba(212,175,106,.35);
-  border-radius:16px;padding:26px 26px 22px;
-}
-.path h3{color:#d4af6a;margin-bottom:10px;font-size:1.05rem;}
-.path ol{margin-left:18px;color:#c9d4e4;font-size:.92rem;}
-.path li{margin:7px 0;}
-.path .hours{color:#93a4bd;font-size:.8rem;margin-bottom:8px;}
-
-/* ===== footer ===== */
-footer{margin-top:72px;padding-top:26px;border-top:1px solid rgba(255,255,255,.08);color:#6b7a94;font-size:.82rem;text-align:center;line-height:2;}
-.note{
-  margin-top:40px;padding:16px 20px;border-radius:12px;
-  background:rgba(79,142,247,.07);border:1px solid rgba(79,142,247,.25);
-  color:#a9c4f5;font-size:.85rem;
-}
-</style>
-</head>
-<body>
-<div style="padding:12px 24px;background:#182b4d;text-align:center;font-size:14px"><a href="index.html" style="color:#e8eef7">新版学习实验室已上线：体验 DeFi 交换、追踪资金与手续费 →</a></div>
-<div class="wrap">
-
-  <!-- ============ HERO ============ -->
-  <header class="hero">
-    <div class="badge"><span class="dot"></span>数字资料包 · v1.6</div>
-    <h1>区块链：从技术到信任</h1>
-    <div class="sub">实战数字资料包 —— 讲稿 · 演示 · 交互 Demo · 六天源码</div>
-    <p class="tagline">用石油、工程与供应链的真实行业场景讲透区块链：数字签名证明「谁做的」，哈希链保证「没改过」，共识机制确保「大家都认」。</p>
-    <div class="stats">
-      <div class="stat"><b>40min</b><span>逐页口播讲稿</span></div>
-      <div class="stat"><b>14</b><span>演示文稿 Sections</span></div>
-      <div class="stat"><b>3</b><span>交互式 Demo</span></div>
-      <div class="stat"><b>6</b><span>天手写源码</span></div>
-      <div class="stat"><b>4</b><span>语言技术栈</span></div>
-    </div>
-  </header>
-
-  <!-- ============ 模块一：讲稿与演示 ============ -->
-  <h2 class="sec"><span class="sec-num">01</span>讲稿与演示文稿</h2>
-  <div class="grid g2">
-    <a class="card" href="02-演讲稿/演讲稿（对外版）.html">
-      <div class="icon">🎤</div>
-      <h3>40 分钟演讲实录讲稿</h3>
-      <p>逐页口播稿，含【↓翻页】【切到 Demo】等节奏标注。拿到就能讲，也可作为技术分享模板。</p>
-      <span class="tag">Word / Markdown / HTML 三版本</span>
-    </a>
-    <a class="card" href="03-演示文稿/blockchain-presentation.html">
-      <div class="icon">📊</div>
-      <h3>主演示文稿</h3>
-      <p>深蓝香槟金视觉 · 14 个 Section：定义 → 误区 → 场景 → 智能合约 → 落地案例 → 局限与决策框架。</p>
-      <span class="tag">浏览器全屏放映</span>
-    </a>
-  </div>
-
-  <!-- ============ 模块二：三个 Demo ============ -->
-  <h2 class="sec"><span class="sec-num">02</span>三个可交互 Demo</h2>
-  <div class="grid g3">
-    <a class="card demo" href="03-演示文稿/demo-signature.html">
-      <div class="icon">✍️</div>
-      <h3>Demo ① 数字签名</h3>
-      <p>生成密钥对 → 供应链签名链 → 分布式验证 → 篡改检测。区块链最底层的安全基础，看得见摸得着。</p>
-      <span class="tag">即开即玩</span>
-    </a>
-    <a class="card demo" href="03-演示文稿/demo-chain.html">
-      <div class="icon">⚖️</div>
-      <h3>Demo ② 共识机制</h3>
-      <p>拜占庭将军问题 → PBFT 三阶段投票 → 作恶节点被拒绝 → PoW / PoS / PBFT 对比。</p>
-      <span class="tag">即开即玩</span>
-    </a>
-    <a class="card demo" href="03-演示文稿/demo-trace.html">
-      <div class="icon">☕</div>
-      <h3>Demo ③ 供应链溯源</h3>
-      <p>一杯咖啡的区块链之旅 → 增/改/删三种篡改演练 → 油套管全生命周期数字身份证。</p>
-      <span class="tag">即开即玩</span>
-    </a>
-  </div>
-
-  <!-- ============ 模块三：六天源码 ============ -->
-  <h2 class="sec"><span class="sec-num">03</span>六天手写实战源码</h2>
-  <div class="grid g6">
-    <a class="card day" href="04-六天实战源码/day1-simple-js-blockchain/README.md">
-      <h3>Day 1 · JS 区块链</h3>
-      <p>区块、哈希、挖矿、矿池 · 9 个实验脚本</p>
-      <span class="tag">JavaScript</span>
-    </a>
-    <a class="card day" href="04-六天实战源码/day2-python-blockchain/README.md">
-      <h3>Day 2 · Python 链</h3>
-      <p>完整链 + REST API + 测试 · 多语言版</p>
-      <span class="tag">Python / C# / JS</span>
-    </a>
-    <a class="card day" href="04-六天实战源码/day3-signatures-utxo/README.md">
-      <h3>Day 3 · 签名与 UTXO</h3>
-      <p>密钥、UTXO 模型、脚本引擎</p>
-      <span class="tag">Python · ecdsa</span>
-    </a>
-    <a class="card day" href="04-六天实战源码/day4-smart-contracts/README.md">
-      <h3>Day 4 · 智能合约</h3>
-      <p>ERC-20 代币、存储模型 · Remix 部署</p>
-      <span class="tag">Solidity</span>
-    </a>
-    <a class="card day" href="04-六天实战源码/day5-defi/README.md">
-      <h3>Day 5 · DeFi</h3>
-      <p>AMM 做市、DEX、借贷清算、闪电贷</p>
-      <span class="tag">Solidity / Python</span>
-    </a>
-    <a class="card day" href="04-六天实战源码/day6-security/README.md">
-      <h3>Day 6 · 安全</h3>
-      <p>重入攻击模拟与防御、工具链概览</p>
-      <span class="tag">Solidity / Python</span>
-    </a>
-  </div>
-
-  <!-- ============ 模块四：学习路径 ============ -->
-  <h2 class="sec"><span class="sec-num">04</span>两条学习路径</h2>
-  <div class="paths">
-    <div class="path">
-      <h3>⚡ 3 小时快速通道 · 认知与分享</h3>
-      <p class="hours">适合：给团队/客户做科普、快速建立全景认知</p>
-      <ol>
-        <li>过一遍主演示文稿（14 个 Section）</li>
-        <li>逐个玩 3 个交互 Demo</li>
-        <li>通读讲稿，掌握讲述节奏</li>
-      </ol>
-    </div>
-    <div class="path">
-      <h3>🛠 6 天实战通道 · 动手写代码</h3>
-      <p class="hours">适合：开发者系统学习，每天 1–2 小时</p>
-      <ol>
-        <li>Day 1–2：从零写出一条区块链</li>
-        <li>Day 3：签名与 UTXO 防伪模型</li>
-        <li>Day 4–5：智能合约与 DeFi</li>
-        <li>Day 6：安全攻防与工程实践</li>
-      </ol>
-    </div>
-  </div>
-
-  <!-- ============ 说明 ============ -->
-  <div class="note">
-    <b>使用说明</b>：演示文稿与三个 Demo 均为独立 HTML 文件，双击即用（联网时加载更佳字体）。Python 代码按各目录 README 安装依赖后运行；Solidity 合约复制到 Remix IDE 部署。完整目录结构与运行命令见 <code>01-产品介绍/README.txt</code>，商品卖点见 <code>01-产品介绍/产品介绍与上架文案.txt</code>。
-  </div>
-
-  <footer>
-    《区块链：从技术到信任》数字资料包 · v1.6<br>
-    Day 1 / Day 2 基于 MIT 开源项目（版权声明已保留于各目录），Day 3–6 为原创内容 · 企业案例仅作教学引用
-  </footer>
-
-</div>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="refresh" content="0; url=index.html" />
+    <meta name="robots" content="noindex" />
+    <title>进入区块链学习实验室</title>
+    <link rel="stylesheet" href="assets/css/lab.css" />
+    <script>
+      window.location.replace("index.html");
+    </script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">学习入口已更新</p>
+          <h1>区块链学习实验室</h1>
+          <p class="hero-copy">
+            从网页体验到源码验证：先动手，再理解背后的规则。
+          </p>
+          <p><a href="index.html">进入学习首页 →</a></p>
+        </div>
+      </section>
+    </main>
+  </body>
 </html>

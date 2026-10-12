@@ -57,6 +57,13 @@ const server = http.createServer((req, res) => {
       if (response.status() >= 400)
         errors.push(`${response.status()} ${response.url()}`);
     });
+    await page.goto(base + "/" + encodeURIComponent("产品介绍.html"));
+    await page.waitForURL("**/index.html");
+    assert.equal(
+      await page.locator("h1").count(),
+      1,
+      "legacy entry should reach the learning homepage",
+    );
     await page.goto(base);
     assert.equal(await page.locator("h1").count(), 1);
     const screenshots = path.join(root, "docs", "screenshots");
@@ -126,6 +133,11 @@ const server = http.createServer((req, res) => {
       await page.locator("#reflection-score").textContent(),
       /正确 3 \/ 3/,
     );
+    await page.goto(
+      "file:///" + path.join(root, "产品介绍.html").replaceAll("\\", "/"),
+    );
+    await page.waitForURL("**/index.html");
+    assert.equal(await page.locator("h1").count(), 1);
     // Browser computes correctly from a file URL too: no web server is required locally.
     await page.goto(
       "file:///" +
