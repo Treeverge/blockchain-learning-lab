@@ -39,10 +39,17 @@
       <p id="initialization-status" class="feedback" role="status">
         正在准备实验，请稍候。
       </p>
-      <a id="reload-experiment" href="defi-exchange.html" hidden>重新加载实验 →</a>
-      <noscript><p>本实验需要启用 JavaScript。你也可以下载资料，运行 Python 实验。</p></noscript>
+      <a id="reload-experiment" href="defi-exchange.html" hidden
+        >重新加载实验 →</a
+      >
+      <noscript
+        ><p>
+          本实验需要启用 JavaScript。你也可以下载资料，运行 Python 实验。
+        </p></noscript
+      >
       <nav class="steps" aria-label="实验步骤">
-        <button data-step="0" aria-current="step" disabled><span>01</span>先预测</button
+        <button data-step="0" aria-current="step" disabled>
+          <span>01</span>先预测</button
         ><button data-step="1" disabled><span>02</span>做交换</button
         ><button data-step="2" disabled><span>03</span>比深度</button
         ><button data-step="3" disabled><span>04</span>查费用</button
@@ -196,6 +203,25 @@
                 <span id="reserve-track-a"></span>
               </div>
               <p>储备比例决定当前边际价格；它不等于整笔交易的成交均价。</p>
+            </div>
+            <div
+              id="trade-flow"
+              class="trade-flow"
+              hidden
+              aria-label="最近交易的资金流向"
+            >
+              <div class="flow-row">
+                <span id="flow-actor">你的钱包</span
+                ><span class="flow-route"
+                  ><b id="flow-input"></b><i aria-hidden="true"></i></span
+                ><span>池子</span>
+              </div>
+              <div class="flow-row flow-return">
+                <span>池子</span
+                ><span class="flow-route"
+                  ><b id="flow-output"></b><i aria-hidden="true"></i></span
+                ><span id="flow-recipient">你的钱包</span>
+              </div>
             </div>
             <table class="ledger-table">
               <caption>

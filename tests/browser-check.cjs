@@ -171,19 +171,40 @@ const server = http.createServer((req, res) => {
     assert.deepEqual(errors, []);
     const delayed = await browser.newPage();
     let releaseScript;
-    const scriptGate = new Promise((resolve) => { releaseScript = resolve; });
+    const scriptGate = new Promise((resolve) => {
+      releaseScript = resolve;
+    });
     await delayed.route("**/assets/js/amm.js", async (route) => {
       await scriptGate;
       await route.continue();
     });
-    const delayedNavigation = delayed.goto(base + "/03-演示文稿/defi-exchange.html");
+    const delayedNavigation = delayed.goto(
+      base + "/03-演示文稿/defi-exchange.html",
+    );
     await delayed.locator('[data-step="1"]').waitFor();
-    assert.ok(await delayed.locator('[data-step="1"]').isDisabled(), 'navigation must wait for initialization');
+    assert.ok(
+      await delayed.locator('[data-step="1"]').isDisabled(),
+      "navigation must wait for initialization",
+    );
     assert.ok(await delayed.locator('[data-prediction="less"]').isDisabled());
     releaseScript();
     await delayedNavigation;
     await delayed.waitForFunction(() => document.body.dataset.ready === "true");
     assert.ok(await delayed.locator('[data-step="1"]').isEnabled());
+    await delayed.emulateMedia({ reducedMotion: "reduce" });
+    await delayed.locator('[data-step="1"]').click();
+    await delayed.locator("#quote").click();
+    await delayed.locator("#execute").click();
+    assert.equal(
+      await delayed.locator("#quoted-output").textContent(),
+      "90.661089",
+    );
+    assert.equal(await delayed.locator("#flow-input").textContent(), "100 A →");
+    assert.equal(
+      await delayed.evaluate(() => document.getAnimations().length),
+      0,
+      "reduced motion must disable effects without hiding results",
+    );
     await delayed.close();
     console.log(
       "Browser QA passed: desktop/mobile, integer quote, balances, errors, comparison, fee change, stale quote, quiz, file URL, no overflow or page errors.",

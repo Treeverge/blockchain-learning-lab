@@ -41,6 +41,17 @@
   let predicted = false;
   let initialTotal = { A: 3000n * M.SCALE, B: 3000n * M.SCALE };
   const answered = new Map();
+  // Animate feedback only; exact ledger values update immediately.
+  function motion(elements, frames, duration = 360) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.getAnimations().forEach((animation) => animation.cancel());
+      return;
+    }
+    elements.forEach((element) => {
+      element.getAnimations().forEach((animation) => animation.cancel());
+      element.animate(frames, { duration, easing: "cubic-bezier(.2,.7,.3,1)" });
+    });
+  }
   function status(message, kind = "") {
     $("trade-status").textContent = message;
     $("trade-status").className = "feedback " + kind;
@@ -96,6 +107,7 @@
       $(id).textContent = "—";
     status(message);
     render();
+    $("trade-flow").hidden = true;
   }
   function setStep(index) {
     step = index;
@@ -120,6 +132,14 @@
     if (index === 4) {
       reset("报价变化实验已重置：先报价，再让另一账户交易。");
     }
+    motion(
+      [document.querySelector(".lesson-intro")],
+      [
+        { opacity: 0.65, transform: "translateY(7px)" },
+        { opacity: 1, transform: "translateY(0)" },
+      ],
+      240,
+    );
   }
   function reportTrade(result, before) {
     const actor = result.actor === "wallet" ? "你" : "另一账户";
@@ -137,6 +157,36 @@
     $("k-change").textContent =
       "+" + ((Number(newK - oldK) / Number(oldK)) * 100).toFixed(6) + "%";
     render();
+    $("trade-flow").hidden = false;
+    $("flow-actor").textContent = $("flow-recipient").textContent =
+      result.actor === "wallet" ? "你的钱包" : "另一账户";
+    $("flow-input").textContent = fmt(result.input) + " " + result.from + " →";
+    $("flow-output").textContent = fmt(result.output) + " " + result.to + " →";
+    motion(
+      Array.from(document.querySelectorAll(".flow-route i")),
+      [
+        { left: "0%", opacity: 0 },
+        { left: "12%", opacity: 1, offset: 0.15 },
+        { left: "88%", opacity: 1, offset: 0.85 },
+        { left: "100%", opacity: 0 },
+      ],
+      1000,
+    );
+    const changed = [];
+    for (const token of ["A", "B"]) {
+      for (const location of ["pool", "wallet", "other"]) {
+        if (before[location][token] !== state[location][token])
+          changed.push($(location + "-" + token.toLowerCase()));
+      }
+    }
+    motion(
+      changed,
+      [
+        { backgroundColor: "#d9e7ff", color: "#2458df" },
+        { backgroundColor: "transparent", color: "#192627" },
+      ],
+      850,
+    );
   }
   function renderComparison() {
     const depthMode = $("compare-mode").value === "depth";
@@ -242,6 +292,13 @@
       $("execute").disabled = false;
       $("intervene").disabled = false;
       status("报价已保存，尚未扣款。执行时会重新计算实际输出。", "success");
+      motion(
+        [$("quoted-output")],
+        [
+          { color: "#2458df", transform: "translateY(4px)" },
+          { color: "#192627", transform: "translateY(0)" },
+        ],
+      );
     } catch (error) {
       status(error.message, "error");
     }
@@ -331,9 +388,11 @@
   });
   render();
   setStep(0);
-  document.querySelectorAll("[data-step], [data-prediction]").forEach((button) => {
-    button.disabled = false;
-  });
+  document
+    .querySelectorAll("[data-step], [data-prediction]")
+    .forEach((button) => {
+      button.disabled = false;
+    });
   document.body.dataset.ready = "true";
   $("initialization-status").hidden = true;
   $("reload-experiment").hidden = true;

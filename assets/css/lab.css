@@ -1083,6 +1083,108 @@ pre {
     padding-bottom: 35px;
   }
 }
+@keyframes lab-arrive {
+  from {
+    opacity: 0.65;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.hero {
+  animation: lab-arrive 550ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.featured {
+  animation: lab-arrive 600ms 80ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.hero .blue {
+  display: inline-block;
+  transition: transform 220ms ease;
+}
+.hero:hover .blue {
+  transform: rotate(-7deg);
+}
+.primary,
+.secondary,
+.prediction-options button,
+.chapter-row a {
+  transition:
+    background-color 180ms,
+    box-shadow 180ms,
+    transform 180ms;
+}
+.primary:hover:not(:disabled),
+.secondary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px #2458df18;
+}
+.primary:active:not(:disabled),
+.secondary:active:not(:disabled) {
+  transform: translateY(0);
+}
+.chapter-row {
+  transition: background-color 200ms;
+}
+.chapter-row:hover {
+  background: #2458df05;
+}
+.chapter-row a:hover {
+  transform: translateX(3px);
+}
+.featured-figure {
+  background-image: linear-gradient(#ffffff05 1px, transparent 1px),
+    linear-gradient(90deg, #ffffff05 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.trade-flow {
+  padding: 15px 0 3px;
+}
+.flow-row {
+  display: grid;
+  grid-template-columns: 65px minmax(0, 1fr) 65px;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+}
+.flow-row + .flow-row {
+  margin-top: 10px;
+}
+.flow-row > span:last-child {
+  text-align: right;
+}
+.flow-route {
+  position: relative;
+  border-bottom: 1px solid #b9c9e5;
+  text-align: center;
+  padding-bottom: 6px;
+}
+.flow-route b {
+  font: 11px var(--mono);
+  color: var(--blue);
+  overflow-wrap: anywhere;
+}
+.flow-route i {
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--blue);
+  opacity: 0;
+}
+.flow-return .flow-route {
+  border-color: #b8d1c2;
+}
+.flow-return .flow-route b,
+.flow-return .flow-route i {
+  color: var(--green);
+}
+.flow-return .flow-route i {
+  background: var(--green);
+}
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
