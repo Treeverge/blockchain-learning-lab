@@ -11,6 +11,7 @@
 ## 从哪里开始
 
 - 双击根目录 `index.html`，进入学习首页。
+- 基础路径：打开 `03-演示文稿/chain-lab.html`，体验哈希、篡改、修复、挖矿和选链。
 - 打开 `03-演示文稿/defi-exchange.html`，完成约 15 分钟的交换实验。
 - 接着打开 `03-演示文稿/defi-liquidity.html`，比较提供流动性与直接持有。
 - 再打开 `03-演示文稿/defi-lending.html`，观察抵押、价格、健康因子与清算坏账。
@@ -42,7 +43,7 @@ DeFi 网页学习路径已串联：交换 → LP → 借贷。借贷实验从真
 
 | 章节 | 内容 | 当前状态 |
 | --- | --- | --- |
-| Day 1 | JavaScript 哈希、区块、挖矿 | 保留原实验，尚未完成本轮校订 |
+| Day 1 | JavaScript 哈希、区块、挖矿 | 新增真实 SHA-256 哈希与选链网页；保留旧源码并注明模型差异 |
 | Day 2 | Python 多节点、共识、分叉 | 保留上游源码与新增实验，依赖版本较旧 |
 | Day 3 | 数字签名、UTXO、脚本 | 保留原实验；网页 RSA 为教学简化模型 |
 | Day 4 | 账户模型、代币合约、存储 | 保留原实验 |
@@ -72,7 +73,7 @@ python -X utf8 -m unittest discover -s tests -p "test_*.py"
 JavaScript 模型测试不需要安装依赖（Node.js 18 或更高版本）：
 
 ```powershell
-node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs
+node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs
 ```
 
 Solidity 操作步骤与单位见 [Day 5 README](04-六天实战源码/day5-defi/README.md)。浏览器与 Solidity 的开发验证方法见 [验证说明](docs/verification.md)。
@@ -88,6 +89,8 @@ assets/js/lp.js             LP 份额、市场与套利账本
 assets/js/liquidity.js      LP 网页交互
 assets/js/lending.js        借贷、清算与坏账的整数模型
 assets/js/borrow.js         借贷网页交互
+assets/js/chain.js          哈希、证明与固定难度选链
+assets/js/chain-lab.js      哈希网页交互与停止控制
 03-演示文稿/                新版交换实验与原有演示
 04-六天实战源码/            六个章节的本地实验
 tests/                      计算、资金守恒、浏览器、合约验证
@@ -100,7 +103,7 @@ docs/                       设计、验证记录与截图
 
 - 深化 LP 实验：部分退出、多用户与更复杂的市场情景。
 - 深化借贷实验：利息、部分清算与预言机风险。
-- 篡改区块实验：从哈希自洽到工作量证明，再到网络接受规则。
+- 深化基础实验：交易授权、UTXO、防双花和分叉传播。
 - 校订共识、溯源和讲稿中的模型边界，逐章验证运行环境。
 
 ## 来源与许可

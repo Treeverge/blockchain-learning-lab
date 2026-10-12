@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>哈希、篡改与选链 · 区块链学习实验室</title>
+    <link rel="stylesheet" href="../assets/css/lab.css" />
+    <script defer src="../assets/js/chain.js"></script>
+    <script defer src="../assets/js/chain-lab.js"></script>
+  </head>
+  <body data-ready="false">
+    <header class="site-header">
+      <a class="brand" href="../index.html"
+        ><span class="brand-mark" aria-hidden="true">▤</span>区块链学习实验室</a
+      ><span class="header-meta">LAB 04 / 哈希与选链</span>
+    </header>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">THE CHAIN EXPERIMENT · 约 15 分钟</p>
+          <h1>
+            改了旧记录，<br />再算一遍就没事了<span class="blue">？</span>
+          </h1>
+          <p class="hero-copy">
+            从一条哈希链，到三个节点的不同账本。<br />区分“能检测修改”和“接受哪段历史”。
+          </p>
+        </div>
+        <aside class="hero-note">
+          <span class="note-index">这次，试着改写历史</span>
+          <p>先发现破绽。<br />再问谁接受它。</p>
+          <div class="note-bottom">
+            <span>真实 SHA-256 · 本地节点模拟</span
+            ><span>无需钱包或后台服务</span>
+          </div>
+        </aside>
+      </section>
+      <p id="chain-loading" class="feedback" role="status">
+        正在计算初始哈希，请稍候。
+      </p>
+      <noscript><p>请启用 JavaScript，或阅读 Day 1 本地源码。</p></noscript>
+      <nav class="steps lending-steps" aria-label="哈希实验步骤">
+        <button data-chain-step="0" disabled><span>01</span>看哈希</button
+        ><button data-chain-step="1" disabled><span>02</span>改记录</button
+        ><button data-chain-step="2" disabled><span>03</span>修链接</button
+        ><button data-chain-step="3" disabled><span>04</span>比节点</button
+        ><button data-chain-step="4" disabled><span>05</span>挖矿选链</button>
+      </nav>
+      <section class="lesson-intro">
+        <p id="chain-step-label" class="eyebrow">01 / 看哈希</p>
+        <h2 id="chain-title">每个区块的哈希，究竟包含什么？</h2>
+        <p id="chain-description">
+          序号、前块哈希、记录文本和 nonce
+          一起参与计算。右侧可以展开完整输入，验证自己的理解。
+        </p>
+      </section>
+      <div class="workbench-heading">
+        <h3>历史改写工作台</h3>
+        <button id="chain-reset" class="text-button" disabled>
+          重置全部节点 ↺
+        </button>
+      </div>
+      <div class="workbench">
+        <section class="trade-panel">
+          <div class="panel-heading">
+            <h3 id="chain-control-title">哈希的输入</h3>
+            <span id="chain-mode" class="tag">未启用证明</span>
+          </div>
+          <section id="chain-hash-panel">
+            <p>区块按固定顺序编码，再交给 SHA-256：</p>
+            <pre class="chain-formula">
+[序号, 前块哈希,
+记录文本, nonce]</pre
+            >
+            <p class="caption">
+              不把字段简单拼接，避免不同字段边界产生歧义。nonce
+              是挖矿时尝试变化的整数，也是哈希输入的一部分。
+            </p>
+            <p class="caption">
+              哈希不是加密，也不检查记录真假。它用于比较内容是否发生变化。
+            </p>
+          </section>
+          <section id="chain-edit-panel" hidden>
+            <label class="field-label" for="chain-block-index"
+              >选择旧区块<select id="chain-block-index">
+                <option value="1">区块 #1</option>
+                <option value="2">区块 #2</option>
+              </select></label
+            ><label class="field-label" for="chain-data">改成什么记录？</label
+            ><textarea id="chain-data" maxlength="180" rows="3">
+工程项目：采购款 900</textarea
+            >
+            <p class="config-hint">
+              修改只影响节点 A 的候选账本。创世块使用共同锚点，不在此处编辑。
+            </p>
+            <button id="chain-tamper" class="primary lp-action">
+              修改记录，保留旧哈希 →</button
+            ><button id="chain-repair" class="secondary lp-action">
+              重算修改点之后的哈希与链接
+            </button>
+            <p class="caption">
+              重算会将相关 nonce 设为
+              0；它不是重新挖矿，也不修改其他节点的账本。
+            </p>
+          </section>
+          <section id="chain-node-panel" hidden>
+            <p>候选链可以自洽，却与其他节点保存的记录不同。</p>
+            <p class="caption">
+              看下面的末块哈希：如果不同，说明历史存在分歧。在没有接受规则时，单靠哈希链无法判断应该采用哪一份。
+            </p>
+            <p class="caption">
+              接下来加入一个固定难度的工作量模型，比较有效累计工作。这里不使用多数票决定链是否正确。
+            </p>
+          </section>
+          <section id="chain-pow-panel" hidden>
+            <label class="field-label" for="chain-difficulty"
+              >基准难度（重新建立时生效）<select id="chain-difficulty">
+                <option value="1">1 位前导零 · 快速</option>
+                <option value="2" selected>2 位前导零 · 默认</option>
+                <option value="3">3 位前导零 · 较慢</option>
+              </select></label
+            ><button id="chain-prepare" class="secondary lp-action">
+              建立原始记录的 PoW 基准
+            </button>
+            <p class="caption">
+              基准会重置三个节点的记录。之后再修改旧记录、重算，然后尝试重新挖矿。
+            </p>
+            <button id="chain-mine" class="primary lp-action" disabled>
+              为候选历史重新挖矿 →</button
+            ><button id="chain-append" class="secondary lp-action" disabled>
+              再挖一个新块，增加累计工作</button
+            ><button id="chain-send" class="secondary lp-action" disabled>
+              把候选链传播给节点 B / C</button
+            ><button id="chain-stop" class="text-button lp-action" disabled>
+              停止当前挖矿
+            </button>
+            <p id="chain-mining-progress" class="caption">
+              尚未挖矿。难度越高，期望尝试次数越多，但单次结果也受运气影响。
+            </p>
+          </section>
+          <p
+            id="chain-status"
+            class="feedback lp-status"
+            role="status"
+            aria-live="polite"
+          >
+            先展开一个区块，看看保存的哈希与重算的哈希。
+          </p>
+        </section>
+        <section class="ledger-panel">
+          <div class="panel-heading">
+            <h3>节点 A · 你的候选账本</h3>
+            <span id="chain-validity" class="tag">正在校验</span>
+          </div>
+          <div id="chain-blocks" class="chain-blocks"></div>
+          <p id="chain-check-summary" class="caption"></p>
+        </section>
+      </div>
+      <section class="lp-comparison">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">LOCAL SNAPSHOTS · SHARED RULES</p>
+            <h3>三个节点，保存了同一段历史吗？</h3>
+          </div>
+          <span id="chain-difficulty-note" class="tag">尚未使用工作量规则</span>
+        </div>
+        <div class="table-scroll">
+          <table class="node-table">
+            <thead>
+              <tr>
+                <th>节点</th>
+                <th>区块数</th>
+                <th>末块哈希</th>
+                <th>校验</th>
+                <th>有效累计工作</th>
+              </tr>
+            </thead>
+            <tbody id="chain-nodes"></tbody>
+          </table>
+        </div>
+        <p id="chain-node-result" class="caption">
+          此处是一个浏览器里的三个账本快照，不是真实 P2P 网络。
+        </p>
+      </section>
+      <section class="reflection borrowing-reflection">
+        <p class="eyebrow">不是一个“通过”就结束了</p>
+        <h3>三个不同的问题，要分别验证。</h3>
+        <p>
+          内容与哈希能否对应？前后区块是否链接？证明是否满足共同难度？即使这些都通过，等工作分叉仍可能保留当前链，未必立即采用你的候选历史。
+        </p>
+        <p>
+          在这个固定难度模型中，多一个有效块意味着更多累计工作。真实网络使用目标难度计算链工作，还会持续出块、传播和验证交易。这里没有签名与余额校验，不能据此推导可以伪造他人的真实转账。
+        </p>
+      </section>
+      <section class="under-the-hood">
+        <details>
+          <summary>
+            计算规则与模型边界 <span aria-hidden="true">＋</span>
+          </summary>
+          <div class="details-content">
+            <p>
+              使用浏览器 Web Crypto 的 SHA-256；固定序列化为 JSON 数组，UTF-8
+              编码。创世哈希来自初始化的共同锚点。区块顺序索引必须一致，候选链不能自报难度。
+            </p>
+            <p>
+              非创世块才要求工作量证明。固定难度 d 下，每个有效块记作 16ᵈ
+              单位的期望工作；这是本实验的度量，不是本次实际尝试次数。等工作保留当前链，更多有效工作才切换。未启用证明的阶段不进行传播选链。
+            </p>
+            <p>
+              每块最多尝试 100000
+              次，异步计算可停止。停止或达到上限不会提交半成品。当前仅支持最多 8
+              块，便于观察和保持页面响应。更高难度不保证每次耗时更长。
+            </p>
+            <p>
+              业务文本是真假、谁有权写入、是否存在双花，是本实验没有解决的问题。供应链数据来源、交易签名、UTXO、真实网络和难度调整需要后续章节。
+            </p>
+            <p>
+              <a href="../assets/js/chain.js">查看链与挖矿模型</a> ·
+              <a href="../04-六天实战源码/day1-simple-js-blockchain/README.md"
+                >Day 1 原实战说明</a
+              >
+            </p>
+          </div>
+        </details>
+      </section>
+      <div class="lesson-navigation">
+        <span id="chain-progress">第 1 / 5 步</span>
+        <div>
+          <button id="chain-prev" class="text-button" disabled>← 上一步</button
+          ><button id="chain-next" class="secondary" disabled>下一步 →</button>
+        </div>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <span>区块链：从技术到信任</span
+      ><span>自洽、有效、被接受，是不同的判断。</span>
+    </footer>
+  </body>
+</html>

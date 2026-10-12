@@ -1198,6 +1198,92 @@ pre {
 .lending-steps {
   grid-template-columns: repeat(5, 1fr);
 }
+.chain-blocks {
+  display: grid;
+  gap: 16px;
+}
+.chain-block {
+  padding: 17px 18px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--blue);
+}
+.chain-block-invalid {
+  border-left-color: var(--orange);
+  background: #fff7ef;
+}
+.chain-block .panel-heading {
+  margin-bottom: 10px;
+}
+.chain-record {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.chain-hash-pair {
+  display: flex;
+  gap: 25px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.chain-hash-pair small {
+  display: block;
+}
+.chain-hash-pair code {
+  font: 12px var(--mono);
+}
+.chain-checks {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.chain-block summary {
+  font-size: 11px;
+  padding: 10px 0 0;
+}
+.chain-block pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.chain-formula {
+  white-space: pre-wrap;
+}
+.trade-panel textarea {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #bdc6bf;
+  margin-top: 6px;
+  font: 13px/1.7 var(--sans);
+  resize: vertical;
+}
+.valid-tag {
+  color: var(--green);
+  background: #eaf4eb;
+}
+.invalid-tag {
+  color: var(--orange);
+  background: #fff0e4;
+}
+.node-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.node-table th {
+  font-weight: normal;
+  color: var(--muted);
+  text-align: left;
+}
+.node-table th,
+.node-table td {
+  padding: 13px 15px 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+.node-table td {
+  font-family: var(--mono);
+}
 .chapter-actions {
   display: flex;
   flex-direction: column;

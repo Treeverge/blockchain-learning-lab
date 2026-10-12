@@ -339,6 +339,99 @@ const server = http.createServer((req, res) => {
     await page.locator("#borrow-take").click();
     assert.equal(await page.locator("#borrow-debt").textContent(), "180 B");
     assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.goto(base + "/03-演示文稿/chain-lab.html");
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    await page.locator('[data-chain-step="1"]').click();
+    await page.locator("#chain-tamper").click();
+    await page.waitForFunction(
+      () => document.querySelector("#chain-tamper").disabled === false,
+    );
+    assert.equal(await page.locator(".chain-block-invalid").count(), 2);
+    await page.locator('[data-chain-step="2"]').click();
+    await page.locator("#chain-repair").click();
+    await page.waitForFunction(
+      () =>
+        document.querySelector("#chain-validity").textContent ===
+        "整条链通过校验",
+    );
+    await page.locator('[data-chain-step="3"]').click();
+    const nodeTips = await page
+      .locator("#chain-nodes tr td:nth-child(3)")
+      .allTextContents();
+    assert.notEqual(nodeTips[0], nodeTips[1]);
+    await page.locator('[data-chain-step="4"]').click();
+    await page.locator("#chain-difficulty").selectOption("1");
+    await page.locator("#chain-prepare").click();
+    await page.waitForFunction(
+      () =>
+        document.querySelector("#chain-mode").textContent.includes("PoW") &&
+        !document.querySelector("#chain-prepare").disabled,
+    );
+    await page.locator("#chain-tamper").click();
+    await page.waitForFunction(
+      () => !document.querySelector("#chain-tamper").disabled,
+    );
+    await page.locator("#chain-repair").click();
+    await page.waitForFunction(
+      () => !document.querySelector("#chain-repair").disabled,
+    );
+    await page.locator("#chain-mine").click();
+    await page.waitForFunction(
+      () => !document.querySelector("#chain-mine").disabled,
+    );
+    await page.locator("#chain-send").click();
+    await page.waitForFunction(() =>
+      document
+        .querySelector("#chain-node-result")
+        .textContent.includes("累计工作相同"),
+    );
+    await page.locator("#chain-append").click();
+    await page.waitForFunction(
+      () =>
+        document.querySelectorAll(".chain-block").length === 4 &&
+        !document.querySelector("#chain-append").disabled,
+    );
+    await page.locator("#chain-send").click();
+    await page.waitForFunction(() =>
+      document
+        .querySelector("#chain-node-result")
+        .textContent.includes("已切换"),
+    );
+    const acceptedTips = await page
+      .locator("#chain-nodes tr td:nth-child(3)")
+      .allTextContents();
+    assert.equal(new Set(acceptedTips).size, 1);
+    await page.screenshot({
+      path: path.join(screenshots, "chain-desktop.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (let i = 0; i < 5; i++) {
+      await page.locator(`[data-chain-step="${i}"]`).click();
+      assert.ok(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+        `chain mobile overflow at step ${i}`,
+      );
+    }
+    await page.screenshot({
+      path: path.join(screenshots, "chain-mobile.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.goto(
+      "file:///" +
+        path.join(root, "03-演示文稿", "chain-lab.html").replaceAll("\\", "/"),
+    );
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    assert.equal(await page.locator(".chain-block").count(), 3);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.locator('[data-chain-step="1"]').click();
+    assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
     assert.deepEqual(errors, []);
     const delayed = await browser.newPage();
     let releaseScript;
