@@ -58,6 +58,12 @@ Python 交易方法接受最小单位整数：`100 * SCALE` 表示 100 A。初�
 
 ## 借贷：抵押不足时，账本不能凭空补钱
 
+先打开 `../../03-演示文稿/defi-lending.html`：从存款人提供现金开始，锁定抵押并借款，改变价格，再选择补抵押、还款或由清算者实际付款。
+
+默认锁定 3 C、价格 100 B/C、借款 180 B：健康因子约 1.333333；75 B/C 时刚好为 1，不能清算；70 时低于 1，但抵押仍足以覆盖还款和 5% 奖励。60 时按本教学清算规则只能偿还 171.428571 B，坏账为 8.571429 B。价格修改本身不转移资产。
+
+网页与 Python 使用 `tests/lending-vectors.json` 核对相同清算结果。两者均省略利息和部分清算；全额关闭、固定奖励及还款上限是教学设定。借款现金保留在钱包，未模拟花掉借款。债务是债权，不是新增现金。
+
 ```powershell
 python -X utf8 03-lending-demo.py
 ```
@@ -75,7 +81,7 @@ python -X utf8 03-lending-demo.py
 在仓库根目录执行：
 
 ```powershell
-node --test tests/amm.test.cjs tests/lp.test.cjs
+node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs
 python -X utf8 -m unittest discover -s tests -p "test_*.py"
 ```
 
@@ -83,4 +89,4 @@ python -X utf8 -m unittest discover -s tests -p "test_*.py"
 
 ## 下一阶段
 
-深化 LP 多用户和部分退出、借贷网页可视化和失败回滚的闪电贷实验。每次新增机制前先明确资金账本、假设和可验证的失败场景。
+深化 LP 多用户和部分退出、借贷利息与部分清算，以及失败回滚的闪电贷实验。每次新增机制前先明确资金账本、假设和可验证的失败场景。

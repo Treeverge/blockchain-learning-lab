@@ -1195,6 +1195,93 @@ pre {
 .lp-steps {
   grid-template-columns: repeat(4, 1fr);
 }
+.lending-steps {
+  grid-template-columns: repeat(5, 1fr);
+}
+.chapter-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: right;
+  font-size: 12px;
+}
+@media (max-width: 680px) {
+  .chapter-actions {
+    grid-column: 2;
+    text-align: left;
+  }
+}
+.price-slider {
+  width: 100%;
+  margin: 20px 0 6px;
+  accent-color: var(--blue);
+}
+.health-card {
+  padding: 22px;
+  background: #f0f5ee;
+  border: 1px solid #dce5d8;
+}
+.health-card > strong {
+  display: block;
+  font: 42px/1.6 var(--mono);
+  color: var(--green);
+  margin: 12px 0;
+}
+.health-card.at-risk {
+  background: #fff3e9;
+  border-color: #eed8c5;
+}
+.health-card.at-risk > strong {
+  color: var(--orange);
+}
+.health-track {
+  position: relative;
+  height: 6px;
+  background: #e0e4dc;
+}
+.health-track > span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+  transition: width 220ms;
+}
+.at-risk .health-track > span {
+  background: var(--orange);
+}
+.health-track > i {
+  position: absolute;
+  left: 50%;
+  top: -4px;
+  height: 14px;
+  width: 1px;
+  background: #99412b;
+}
+.health-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  margin: 8px 0;
+  color: var(--muted);
+}
+.health-card > p {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 14px;
+}
+.ledger-panel .ledger-table:has(#borrow-debt) th {
+  width: 60%;
+}
+.liquidation-preview {
+  margin-top: 22px;
+}
+.borrowing-reflection {
+  margin-top: 26px;
+}
+.borrowing-reflection > p:not(.eyebrow) {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 14px;
+}
 .featured a.featured-next {
   display: block;
   padding: 0;

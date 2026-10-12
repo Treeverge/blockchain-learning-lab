@@ -240,6 +240,105 @@ const server = http.createServer((req, res) => {
     await page.locator("#lp-price").selectOption("2");
     await page.locator("#lp-arbitrage").click();
     assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.goto(base + "/03-演示文稿/defi-lending.html");
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    await page.locator("#borrow-provide").click();
+    await page.locator('[data-borrow-step="1"]').click();
+    await page.locator("#borrow-pledge").click();
+    await page.locator("#borrow-take").click();
+    assert.equal(await page.locator("#borrow-debt").textContent(), "180 B");
+    assert.equal(
+      await page.locator("#borrow-health").textContent(),
+      "1.333333",
+    );
+    await page.locator('[data-borrow-step="2"]').click();
+    await page.locator('[data-price="75"]').click();
+    assert.equal(await page.locator("#borrow-health").textContent(), "1");
+    assert.ok(await page.locator("#borrow-liquidate").isDisabled());
+    await page.locator('[data-price="70"]').click();
+    assert.equal(
+      await page.locator("#borrow-pool-cash").textContent(),
+      "9820 B",
+    );
+    await page.locator('[data-borrow-step="3"]').click();
+    await page.locator("#borrow-repay").click();
+    assert.equal(await page.locator("#borrow-debt").textContent(), "150 B");
+    assert.equal(await page.locator("#borrow-health").textContent(), "1.12");
+    await page.locator("#borrow-repay-all").click();
+    assert.equal(
+      await page.locator("#borrow-free-collateral").textContent(),
+      "4",
+    );
+    await page.locator("#borrow-reset").click();
+    await page.locator("#borrow-provide").click();
+    await page.locator('[data-borrow-step="1"]').click();
+    await page.locator("#borrow-pledge").click();
+    await page.locator("#borrow-take").click();
+    await page.locator('[data-borrow-step="2"]').click();
+    await page.locator('[data-price="60"]').click();
+    await page.locator('[data-borrow-step="4"]').click();
+    assert.equal(
+      await page.locator("#borrow-preview-bad").textContent(),
+      "8.571429 B",
+    );
+    await page.locator("#borrow-liquidate").click();
+    assert.equal(
+      await page.locator("#borrow-preview-label").textContent(),
+      "本次清算结果",
+    );
+    assert.equal(
+      await page.locator("#borrow-preview-repaid").textContent(),
+      "171.428571 B",
+    );
+    assert.equal(
+      await page.locator("#borrow-bad-debt").textContent(),
+      "8.571429 B",
+    );
+    assert.equal(
+      await page.locator("#borrow-book-value").textContent(),
+      "9991.428571 B",
+    );
+    assert.match(
+      await page.locator("#borrow-conservation").textContent(),
+      /守恒/,
+    );
+    assert.ok(await page.locator("#borrow-price").isDisabled());
+    await page.screenshot({
+      path: path.join(screenshots, "lending-desktop.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (let i = 0; i < 5; i++) {
+      await page.locator(`[data-borrow-step="${i}"]`).click();
+      assert.ok(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+        `lending overflow at step ${i}`,
+      );
+    }
+    await page.screenshot({
+      path: path.join(screenshots, "lending-mobile.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.goto(
+      "file:///" +
+        path
+          .join(root, "03-演示文稿", "defi-lending.html")
+          .replaceAll("\\", "/"),
+    );
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.locator("#borrow-provide").click();
+    await page.locator('[data-borrow-step="1"]').click();
+    await page.locator("#borrow-pledge").click();
+    await page.locator("#borrow-take").click();
+    assert.equal(await page.locator("#borrow-debt").textContent(), "180 B");
+    assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
     assert.deepEqual(errors, []);
     const delayed = await browser.newPage();
     let releaseScript;

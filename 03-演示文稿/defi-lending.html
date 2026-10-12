@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>借贷与清算 · 区块链学习实验室</title>
+    <link rel="stylesheet" href="../assets/css/lab.css" />
+    <script defer src="../assets/js/amm.js"></script>
+    <script defer src="../assets/js/lending.js"></script>
+    <script defer src="../assets/js/borrow.js"></script>
+  </head>
+  <body data-ready="false">
+    <header class="site-header">
+      <a class="brand" href="../index.html"
+        ><span class="brand-mark" aria-hidden="true">▤</span>区块链学习实验室</a
+      ><span class="header-meta">LAB 03 / 借贷与清算</span>
+    </header>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">THE LENDING EXPERIMENT · 约 15 分钟</p>
+          <h1>
+            借款时很安全，<br />价格跌了以后呢<span class="blue">？</span>
+          </h1>
+          <p class="hero-copy">
+            抵押物不会凭空消失，但它的价值会变。<br />追踪借款人、清算者与存款人的每一笔资产。
+          </p>
+        </div>
+        <aside class="hero-note">
+          <span class="note-index">这次，观察三个角色</span>
+          <p>谁提供钱？<br />谁还债，谁承担缺口？</p>
+          <div class="note-bottom">
+            <span>C 是抵押资产，B 是现金计价资产</span
+            ><a href="defi-liquidity.html">回看 LP 实验 →</a>
+          </div>
+        </aside>
+      </section>
+      <p id="borrow-loading" class="feedback" role="status">
+        正在准备实验，请稍候；若未完成，请刷新或本地打开。
+      </p>
+      <noscript
+        ><p>请启用 JavaScript，或运行本地 Python 借贷实验。</p></noscript
+      >
+      <nav class="steps lending-steps" aria-label="借贷实验步骤">
+        <button data-borrow-step="0" disabled><span>01</span>资金来源</button
+        ><button data-borrow-step="1" disabled><span>02</span>抵押借款</button
+        ><button data-borrow-step="2" disabled><span>03</span>价格风险</button
+        ><button data-borrow-step="3" disabled><span>04</span>补救操作</button
+        ><button data-borrow-step="4" disabled><span>05</span>清算损失</button>
+      </nav>
+      <section class="lesson-intro">
+        <p id="borrow-step-label" class="eyebrow">01 / 资金来源</p>
+        <h2 id="borrow-step-title">智能合约的钱，也是别人存进来的。</h2>
+        <p id="borrow-step-description">
+          存款人持有 10000 B，借款人持有 4 C，清算者持有 1000
+          B。池子从空账本开始。
+        </p>
+      </section>
+      <div class="workbench-heading">
+        <h3>借贷工作台</h3>
+        <button id="borrow-reset" class="text-button">重置整个情景 ↺</button>
+      </div>
+      <div class="workbench">
+        <section class="trade-panel">
+          <div class="panel-heading">
+            <h3 id="borrow-control-title">资金来源</h3>
+            <span id="borrow-position-tag" class="tag">尚未借款</span>
+          </div>
+          <section id="borrow-fund-panel">
+            <label class="field-label" for="borrow-fund-amount"
+              >存款人提供多少 B？</label
+            >
+            <div class="amount-field">
+              <input
+                id="borrow-fund-amount"
+                value="10000"
+                inputmode="decimal"
+              /><span>B</span>
+            </div>
+            <p class="config-hint">
+              从存款人的钱包转入池子，不生成新的资产。存款余额：<span
+                id="borrow-lender-cash"
+                >10000</span
+              >
+              B。
+            </p>
+            <button id="borrow-provide" class="primary lp-action" disabled>
+              存入现金，为借款提供资金 →
+            </button>
+          </section>
+          <section id="borrow-open-panel" hidden>
+            <label class="field-label" for="borrow-collateral-input"
+              >先锁定多少抵押资产？</label
+            >
+            <div class="amount-field">
+              <input
+                id="borrow-collateral-input"
+                value="3"
+                inputmode="decimal"
+              /><span>C</span>
+            </div>
+            <small
+              >可用抵押资产
+              <span id="borrow-free-collateral">4</span> C。价格初始为 100
+              B/C。</small
+            ><button id="borrow-pledge" class="secondary lp-action">
+              锁定抵押资产</button
+            ><label class="field-label" for="borrow-debt-input"
+              >然后借出多少现金？</label
+            >
+            <div class="amount-field">
+              <input
+                id="borrow-debt-input"
+                value="180"
+                inputmode="decimal"
+              /><span>B</span>
+            </div>
+            <p class="config-hint">
+              本实验最大借款为抵押价值的
+              2/3。新增借款检查累计债务，而不是覆盖旧记录。
+            </p>
+            <button id="borrow-take" class="primary lp-action">
+              借款，观察现金与债务 →
+            </button>
+          </section>
+          <section id="borrow-price-panel" hidden>
+            <label class="field-label" for="borrow-price"
+              >抵押资产单价：<strong id="borrow-price-label">100</strong>
+              B/C</label
+            ><input
+              id="borrow-price"
+              class="price-slider"
+              type="range"
+              min="10"
+              max="200"
+              value="100"
+              step="1"
+            />
+            <div class="presets">
+              <button data-price="100">100</button
+              ><button data-price="75">75</button
+              ><button data-price="70">70</button
+              ><button data-price="60">60</button
+              ><button data-price="40">40</button>
+            </div>
+            <p class="caption">
+              价格变化不改变抵押数量，也不立即转走资金。默认头寸在 75 B/C
+              时健康因子刚好为 1，低于它才可清算。
+            </p>
+            <p class="caption">先预测价格降到 70 会怎样，再拖动价格查看。</p>
+          </section>
+          <section id="borrow-rescue-panel" hidden>
+            <label class="field-label" for="borrow-topup-input"
+              >用剩余资产补抵押</label
+            >
+            <div class="amount-field">
+              <input
+                id="borrow-topup-input"
+                value="0.5"
+                inputmode="decimal"
+              /><span>C</span>
+            </div>
+            <button id="borrow-topup" class="secondary lp-action">
+              增加抵押，重新检查健康</button
+            ><label class="field-label" for="borrow-repay-input"
+              >或偿还一部分现金债务</label
+            >
+            <div class="amount-field">
+              <input
+                id="borrow-repay-input"
+                value="30"
+                inputmode="decimal"
+              /><span>B</span>
+            </div>
+            <button id="borrow-repay" class="primary lp-action">
+              还款，降低债务 →</button
+            ><button id="borrow-repay-all" class="text-button lp-action">
+              偿清全部债务并取回抵押 →
+            </button>
+            <p class="caption">
+              还款需要钱包里有现金。健康恢复不代表可以马上再借：借款上限和清算阈值是两个不同的规则。
+            </p>
+          </section>
+          <section id="borrow-liquidate-panel" hidden>
+            <p id="borrow-eligibility" class="caption">头寸健康，不能清算。</p>
+            <p
+              id="borrow-preview-label"
+              class="eyebrow"
+              style="margin-top: 20px"
+            >
+              执行前的清算预估
+            </p>
+            <dl class="metrics liquidation-preview">
+              <div>
+                <dt>清算者实际偿还</dt>
+                <dd id="borrow-preview-repaid">—</dd>
+              </div>
+              <div>
+                <dt>清算者取得抵押</dt>
+                <dd id="borrow-preview-seized">—</dd>
+              </div>
+              <div>
+                <dt>退回借款人</dt>
+                <dd id="borrow-preview-returned">—</dd>
+              </div>
+              <div>
+                <dt>预计确认坏账</dt>
+                <dd id="borrow-preview-bad">—</dd>
+              </div>
+            </dl>
+            <button id="borrow-liquidate" class="primary lp-action" disabled>
+              由清算者实际付款并清算 →
+            </button>
+            <p class="caption">
+              使用全额关闭的教学规则，奖励
+              5%。可还款额受抵押价值与奖励约束；不够偿还的债务不会凭空补齐。
+            </p>
+          </section>
+          <p
+            id="borrow-status"
+            class="feedback lp-status"
+            role="status"
+            aria-live="polite"
+          >
+            从存款人的现金开始。债务记录不是现金。
+          </p>
+        </section>
+        <section class="ledger-panel">
+          <div class="panel-heading">
+            <h3>头寸健康与资金状态</h3>
+            <span id="borrow-revision" class="tag">初始账本</span>
+          </div>
+          <div id="borrow-health-card" class="health-card">
+            <div class="pool-caption">
+              <span>健康因子 · 清算边界为 1</span
+              ><span id="borrow-health-status">无债务</span>
+            </div>
+            <strong id="borrow-health">—</strong>
+            <div class="health-track" aria-hidden="true">
+              <span id="borrow-health-fill"></span><i></i>
+            </div>
+            <div class="health-scale">
+              <span>0 · 高风险</span><span>1 · 清算边界</span><span>2</span>
+            </div>
+            <p>
+              抵押价值 × 80% ÷ 债务。资格用精确数值判定，显示值向下取整到 6 位。
+            </p>
+          </div>
+          <table class="ledger-table">
+            <caption>
+              数量、价值和债务分开看
+            </caption>
+            <tbody>
+              <tr>
+                <th>锁定的抵押数量</th>
+                <td id="borrow-locked">0 C</td>
+              </tr>
+              <tr>
+                <th>抵押资产单价</th>
+                <td id="borrow-unit-price">100 B/C</td>
+              </tr>
+              <tr>
+                <th>抵押总价值</th>
+                <td id="borrow-value">0 B</td>
+              </tr>
+              <tr>
+                <th>累计债务</th>
+                <td id="borrow-debt">0 B</td>
+              </tr>
+              <tr>
+                <th>按当前价格的借款上限</th>
+                <td id="borrow-max">0 B</td>
+              </tr>
+              <tr>
+                <th>池子可用现金</th>
+                <td id="borrow-pool-cash">0 B</td>
+              </tr>
+              <tr>
+                <th>借款人现金余额</th>
+                <td id="borrow-wallet-cash">0 B</td>
+              </tr>
+            </tbody>
+          </table>
+          <div id="borrow-transfer" class="receipt" hidden>
+            <p class="eyebrow">最近一次资产转移</p>
+            <p id="borrow-transfer-text"></p>
+          </div>
+          <div class="account-check">
+            <span class="check-dot" aria-hidden="true"></span
+            ><span id="borrow-conservation">C、B 总量分别守恒</span>
+          </div>
+        </section>
+      </div>
+      <section id="borrow-outcome" class="lp-comparison" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">WHO ABSORBS THE SHORTFALL?</p>
+            <h3 id="borrow-outcome-title">存款人的债权，能收回多少？</h3>
+          </div>
+          <span class="tag">现金 B · 债权不重复计入现金</span>
+        </div>
+        <div class="value-comparison">
+          <div>
+            <span>存款债权</span><strong id="borrow-deposit-value">0 B</strong
+            ><small>存款人实际存入的金额</small>
+          </div>
+          <div>
+            <span>池子现金 + 未偿债权</span
+            ><strong id="borrow-book-value">0 B</strong
+            ><small>账面总额；债权未必能全部回收</small>
+          </div>
+          <div class="value-difference">
+            <span>已确认坏账</span><strong id="borrow-bad-debt">0 B</strong
+            ><small>确认后形成存款人的回收缺口</small>
+          </div>
+        </div>
+        <p id="borrow-outcome-note" class="caption">
+          现金 + 未偿债务 + 坏账 = 存款。这个等式不保证贷款能全额回收。
+        </p>
+        <div id="borrow-settlement" class="lp-reference" hidden></div>
+      </section>
+      <section class="reflection borrowing-reflection">
+        <p class="eyebrow">想一想，再改一改</p>
+        <h3>为什么不能把三个数字混为一谈？</h3>
+        <p>
+          锁定 3 C、价格为 100 B/C 时，抵押价值是 300 B。如果借 180 B，债务是
+          180 B，钱包里也收到 180 B，但债务记录不属于新增的现金。
+        </p>
+        <p>
+          试三个独立情景：70 B/C 时不采取行动；70 B/C 时补抵押或还 30 B；40 B/C
+          时让清算者付款。用重置保证比较从同一个初始账本开始。
+        </p>
+      </section>
+      <section class="under-the-hood">
+        <details>
+          <summary>
+            打开完整账本与模型边界 <span aria-hidden="true">＋</span>
+          </summary>
+          <div class="details-content">
+            <table class="ledger-table">
+              <caption>
+                资产位置 · C 与 B 分别对账
+              </caption>
+              <thead>
+                <tr>
+                  <th>位置</th>
+                  <th>C</th>
+                  <th>B</th>
+                </tr>
+              </thead>
+              <tbody id="borrow-audit"></tbody>
+              <tfoot>
+                <tr>
+                  <th>资产总量</th>
+                  <td id="borrow-total-c">4</td>
+                  <td id="borrow-total-b">11000</td>
+                </tr>
+              </tfoot>
+            </table>
+            <p>
+              本实验使用虚拟资产和手动设定的参考价格，没有真实钱包或预言机。借款现金保留在钱包，省略使用借款、利息、存款退出、部分清算、Gas
+              和市场卖出。真实借款人未必有足够现金及时还款。
+            </p>
+            <p>
+              清算者的奖励由参考价格计价，不代表已经卖出获利。固定 5%
+              奖励、全额关闭和奖励优先的还款上限是本实验与 Python
+              示例的教学设定，不代表所有协议。价格变化本身不会执行清算。
+            </p>
+            <p>
+              清算或全额还款后冻结情景；重置可继续对照。没有在此处模拟由谁最终承担坏账的具体协议分摊机制，只显示存款资产的账面回收缺口。
+            </p>
+            <p>
+              <a href="../assets/js/lending.js">查看整数借贷模型</a> ·
+              <a href="../04-六天实战源码/day5-defi/03-lending-demo.py"
+                >查看 Python 示例</a
+              >
+            </p>
+          </div>
+        </details>
+      </section>
+      <div class="lesson-navigation">
+        <span id="borrow-progress">第 1 / 5 步</span>
+        <div>
+          <button id="borrow-prev" class="text-button" disabled>← 上一步</button
+          ><button id="borrow-next" class="secondary" disabled>下一步 →</button>
+        </div>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <span>区块链：从技术到信任</span
+      ><span>抵押是缓冲，不是永远安全的保证。</span>
+    </footer>
+    <script>
+      setTimeout(function () {
+        if (document.body.dataset.ready !== "true")
+          document.getElementById("borrow-loading").textContent =
+            "实验未能加载完成，请刷新重试，或下载资料后本地打开。";
+      }, 15000);
+    </script>
+  </body>
+</html>

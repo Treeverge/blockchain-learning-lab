@@ -1,0 +1,16 @@
+[
+  {
+    "price": "70",
+    "repaid": "180",
+    "seized": "2.7",
+    "returned": "0.3",
+    "badDebt": "0"
+  },
+  {
+    "price": "60",
+    "repaid": "171.428571",
+    "seized": "3",
+    "returned": "0",
+    "badDebt": "8.571429"
+  }
+]

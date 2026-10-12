@@ -2,6 +2,7 @@ import importlib.util
 from pathlib import Path
 from decimal import Decimal as D
 import unittest
+import json
 
 spec = importlib.util.spec_from_file_location('lending_demo', Path(__file__).resolve().parents[1] / '04-六天实战源码/day5-defi/03-lending-demo.py')
 module = importlib.util.module_from_spec(spec)
@@ -66,6 +67,17 @@ class LendingTests(unittest.TestCase):
         self.assertEqual(result['returned'], D('0.3'))
         self.assertEqual(result['bad_debt'], D('0'))
         self.assertEqual(p.wallets['Alice']['collateral'], D('1.3'))
+
+    def test_shared_browser_vectors(self):
+        path = Path(__file__).resolve().parents[1] / 'tests/lending-vectors.json'
+        for vector in json.loads(path.read_text(encoding='utf-8')):
+            with self.subTest(price=vector['price']):
+                p = self.pool()
+                p.borrow('Alice', '3', '180')
+                p.set_price(vector['price'])
+                result = p.liquidate('Alice', 'Liquidator')
+                for js_key, py_key in [('repaid', 'repaid'), ('seized', 'seized'), ('returned', 'returned'), ('badDebt', 'bad_debt')]:
+                    self.assertEqual(result[py_key], D(vector[js_key]))
 
 if __name__ == '__main__':
     unittest.main()
