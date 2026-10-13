@@ -1385,6 +1385,52 @@ pre {
 .lp-status {
   margin-top: 20px;
 }
+.account-instruction {
+  margin-top: 20px;
+}
+.account-contract,
+.account-receipt {
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+  margin-top: 24px;
+}
+.account-conservation,
+.account-draft {
+  margin-top: 16px;
+}
+.account-fee-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 22px 0;
+}
+.account-fee-metrics span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+.account-fee-metrics strong {
+  display: block;
+  font: 20px/1.7 var(--mono);
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 680px) {
+  .account-fee-metrics {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .account-fee-metrics > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: center;
+  }
+  .account-fee-metrics strong {
+    margin: 0;
+    font-size: 18px;
+  }
+}
 .network-nodes {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

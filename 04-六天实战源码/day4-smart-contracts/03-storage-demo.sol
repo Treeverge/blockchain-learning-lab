@@ -7,7 +7,7 @@
 //
 // 在比特币里：
 //   你只能记录"谁有多少钱"（UTXO 集合）
-//   你想存别的东西？做不到。脚本只能做简单的条件判断。
+//   脚本条件与数据承诺不能直接等同于本例的通用可变合约存储。
 //
 // 在以太坊里：
 //   合约有自己的存储空间，像一个文件系统，能存任意数据
@@ -15,16 +15,16 @@
 //
 // C++ 程序员的直觉：
 //   你的 C++ 程序跑在内存里，关了程序数据就没了
-//   智能合约跑在区块链上，数据永久存在，全网的节点都帮你存着
+//   智能合约的状态在节点接受的链上持久保存，后续交易与链重组仍可能改变它
 //
-//   所以存储很贵！写 1 个 256 位整数 ≈ 20000 Gas（约 $0.01~$0.10）
-//   读存储免费（本地节点直接读，不需要发交易）
+//   存储成本受旧值、新值、访问状态与协议规则影响，不固定换算成美元
+//   链外eth_call不提交交易费用；链上执行时读取存储也消耗Gas
 //
 // ======================================================================
 // Solidity 的三种数据位置：
 // ======================================================================
 //
-//   storage  — 链上永久存储，修改要花 Gas
+//   storage  — 跨调用的持久状态，读写在链上执行时消耗 Gas
 //              ≈ C++ 里写文件到磁盘，但每个全节点都存一份
 //
 //   memory   — 函数执行期间的临时内存，函数结束就释放
@@ -41,7 +41,7 @@ pragma solidity ^0.8.20;
 
 contract StorageDemo {
     // ==============================================================
-    // storage 变量 — 声明在合约层级，永久存在链上
+    // storage 变量 — 声明在合约层级，跨调用持久保存
     // ==============================================================
 
     // 简单类型
@@ -96,12 +96,12 @@ contract StorageDemo {
     }
 
     // ==============================================================
-    // 读 storage（不花 Gas，只读）
+    // 读 storage（不修改状态；链外调用不提交交易费用）
     // 注意: view 标记 — 不修改链上数据
     // ==============================================================
 
     function getCounter() external view returns (uint256) {
-        return counter;            // 读 storage → 免费
+        return counter;            // 链上执行时读取仍计入 Gas
     }
 
     function getNumbers() external view returns (uint256[] memory) {
@@ -110,11 +110,11 @@ contract StorageDemo {
     }
 
     function getNumberCount() external view returns (uint256) {
-        return numbers.length;     // 读数组长度 → 免费
+        return numbers.length;     // 不修改数组
     }
 
     function getUser(address addr) external view returns (User memory) {
-        return users[addr];        // 复制 struct 到 memory → 免费（读部分）
+        return users[addr];        // 复制 struct 到 memory；链上执行仍计入 Gas
         //                              但返回 memory 会复制数据
     }
 
@@ -132,7 +132,7 @@ contract StorageDemo {
 
         // 这整个函数是 view（只读），因为 tempArray 在 memory 里
         // 没有修改任何 storage 变量
-        // → 调用这个函数不需要发交易！免费！
+        // → 可用链外eth_call观察结果，不提交状态或交易费用
     }
 
     // 对比：这个函数会修改 storage
@@ -174,11 +174,11 @@ contract StorageDemo {
     //
     //   3. 对比 addNumber(42) 和 getNumbers():
     //       addNumber → 发交易 → 花 Gas
-    //       getNumbers → call → 不花 Gas
+    //       getNumbers → 链外call → 不提交交易费用；执行本身仍计量Gas
     //
     // 关键理解:
     //   - 任何改变 storage 的操作 → 必须发交易 → 花 Gas → 全网节点都执行
-    //   - 任何只读的操作 → 不发交易 → 不花 Gas → 你的本地节点直接返回结果
+    //   - 链外读取可不发交易；只读函数若在链上被调用，仍消耗Gas
     //
     //   这和比特币完全不同：
     //     比特币: 你想知道余额 → 自己扫 UTXO 集合算

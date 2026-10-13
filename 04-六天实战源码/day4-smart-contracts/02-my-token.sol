@@ -27,8 +27,8 @@
 //   Approval       →  授权事件
 //
 // 对比你 Day 3 学的比特币:
-//   比特币: 地址 = Hash160(公钥)  →  只能收钱
-//   以太坊: 地址 = 公钥的后20字节 →  能收钱 + 能调用合约函数
+//   部分比特币地址编码公钥哈希；另一些编码脚本条件，不是只能收钱。
+//   传统以太坊外部账户地址取公钥 Keccak-256 摘要的最后20字节；不是公钥直接截断。
 //
 // 运行方式: 把这段代码复制到 Remix IDE (https://remix.ethereum.org)
 //          编译 → 部署到 Remix VM → 交互测试
@@ -76,7 +76,7 @@ contract MyToken is IERC20 {
     // 代币符号 — 比如 "MTK"（交易对里显示的东西）
     string public symbol;
 
-    // 小数位数 — 18 是以太坊标准（1 ETH = 10^18 wei）
+    // 小数位数 — 此代币选择18位；ERC-20代币也可以选择其他精度
     // 1 个代币 = 10^18 个最小单位
     uint8 public decimals;
 
@@ -96,6 +96,7 @@ contract MyToken is IERC20 {
     // 部署时执行一次，类似 C++ 构造函数
     // 部署合约的人（msg.sender）获得所有初始代币
     constructor(string memory _name, string memory _symbol, uint256 initialSupply) {
+        _deployer = msg.sender;
         name = _name;
         symbol = _symbol;
         decimals = 18;  // 1 个代币 = 10^18 最小单位
@@ -191,6 +192,7 @@ contract MyToken is IERC20 {
         // 限制：只有部署者能铸币
         // 真实项目中这里会用 OpenZeppelin 的 Ownable 或 access control
         require(msg.sender == _deployer, "ERC20: only deployer can mint");
+        require(to != address(0), "ERC20: cannot mint to zero address");
 
         _totalSupply += amount;
         _balances[to] += amount;
@@ -240,12 +242,11 @@ contract MyToken is IERC20 {
 // 1. storage vs memory:
 //    在 Solidity 里，数据存在两个地方：
 //      storage  → 链上永久存储（类似写入数据库），修改花 Gas
-//      memory   → 仅在函数执行期间存在（类似栈变量），不花 Gas
+//      memory   → 仅在本次执行期间存在；读写与扩展内存仍消耗 Gas
 //    对比 C++: storage ≈ 写入磁盘的文件, memory ≈ 栈上的局部变量
 //
 // 2. Gas:
-//    每行代码都要花钱执行。存一个 256 位整数到 storage 要 20000 Gas。
-//    修改变量只要 5000 Gas。所以 Solidity 程序员天天在想怎么省 Gas。
+//    执行指令消耗 Gas；存储费用随旧值、新值、访问状态和协议规则变化，不能固定估价。
 //
 // 3. msg.sender:
 //    谁触发这笔交易的。这是一个全局变量，你不需要声明。
@@ -256,15 +257,15 @@ contract MyToken is IERC20 {
 //    immutable 变量不占用 storage，Gas 更便宜。
 //
 // 5. view / pure:
-//    view    → 这个函数只读不写（不修改链上数据），调用不花 Gas
+//    view    → 不修改状态；链外 eth_call 不提交交易费用，合约内调用仍消耗 Gas
 //    pure    → 连读都不读，纯计算
 //    没标记 → 会修改链上数据，调用要花 Gas + 发交易
 //
 // 6. 交易 vs 调用:
 //    写操作（transfer, approve 等）→ 需要发交易 → 花 Gas → 等矿工确认
-//    读操作（balanceOf, totalSupply 等）→ 不用发交易 → 免费 → 立即返回
+//    链外读取（balanceOf等）→ 通常用eth_call，不提交状态；服务提供者也可能有访问配额
 //
 //    这和比特币的差别很大：
-//      比特币: 每笔交易都是"转钱"
-//      以太坊: 每笔交易都是"调用合约里的某个函数"
+//      比特币交易消费输出并创建输出，可包含脚本条件。
+//      以太坊交易可转移原生资产、部署合约或调用代码，不是全部都调用函数。
 // ================================================================

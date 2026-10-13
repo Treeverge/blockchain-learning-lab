@@ -742,6 +742,159 @@ const server = http.createServer((req, res) => {
     );
     assert.equal(await page.locator("#net-fees").textContent(), "1");
     assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.goto(base + "/03-演示文稿/account-lab.html");
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    const accountRow = (name) =>
+      page
+        .locator("#account-accounts tr")
+        .filter({ has: page.getByText(name, { exact: true }) });
+    await page.locator("#account-transfer").click();
+    assert.equal(await page.locator("#account-alice-lab").textContent(), "90");
+    assert.equal(
+      await accountRow("Alice").locator("td").first().textContent(),
+      "0.96",
+    );
+    assert.equal(
+      await accountRow("Alice").locator("td").last().textContent(),
+      "1",
+    );
+    assert.match(
+      await page.locator("#account-fee-metrics").textContent(),
+      /最大预算0.07 G.*实际费用0.04 G/,
+    );
+    await page.locator('[data-account-step="1"]').click();
+    await page.locator("#account-build").click();
+    await page.locator("#account-submit").click();
+    assert.equal(await page.locator("#account-alice-lab").textContent(), "80");
+    await page.locator("#account-submit").click();
+    assert.equal(
+      await page.locator("#account-receipt-tag").textContent(),
+      "纳入前拒绝",
+    );
+    assert.equal(
+      await accountRow("Alice").locator("td").first().textContent(),
+      "0.92",
+    );
+    await page.locator("#account-future").click();
+    assert.match(
+      await page.locator("#account-status").textContent(),
+      /尚未轮到/,
+    );
+    await page.locator('[data-account-step="2"]').click();
+    await page.locator("#account-memory").click();
+    assert.equal(await page.locator("#account-counter").textContent(), "0");
+    assert.match(
+      await page.locator("#account-memory-result").textContent(),
+      /临时返回 9/,
+    );
+    await page.locator("#account-store").click();
+    assert.equal(await page.locator("#account-counter").textContent(), "9");
+    await page.locator('[data-account-step="3"]').click();
+    await page.locator("#account-fail").click();
+    assert.equal(
+      await page.locator("#account-receipt-tag").textContent(),
+      "业务已回滚",
+    );
+    assert.equal(await page.locator("#account-counter").textContent(), "9");
+    assert.equal(await page.locator("#account-alice-lab").textContent(), "80");
+    assert.equal(
+      await accountRow("Alice").locator("td").first().textContent(),
+      "0.825",
+    );
+    assert.equal(
+      await accountRow("Alice").locator("td").last().textContent(),
+      "4",
+    );
+    assert.match(
+      await page.locator("#account-trace").textContent(),
+      /临时写入 counter = 10/,
+    );
+    assert.match(
+      await page.locator("#account-log-count").textContent(),
+      /回执提交日志 0 条/,
+    );
+    await page.locator('[data-account-step="4"]').click();
+    await page.locator("#account-approve").click();
+    assert.match(
+      await page.locator("#account-allowance").textContent(),
+      /20 LAB/,
+    );
+    assert.equal(await page.locator("#account-alice-lab").textContent(), "80");
+    await page.locator("#account-delegate").click();
+    assert.equal(await page.locator("#account-alice-lab").textContent(), "65");
+    assert.equal(await page.locator("#account-bob-lab").textContent(), "85");
+    assert.match(
+      await page.locator("#account-allowance").textContent(),
+      /5 LAB/,
+    );
+    assert.equal(
+      await accountRow("Eve").locator("td").first().textContent(),
+      "0.95",
+    );
+    await page.locator("#account-delegate").click();
+    assert.equal(
+      await page.locator("#account-receipt-tag").textContent(),
+      "业务已回滚",
+    );
+    assert.equal(
+      await accountRow("Eve").locator("td").first().textContent(),
+      "0.9",
+    );
+    assert.equal(await page.locator("#account-alice-lab").textContent(), "65");
+    await page.screenshot({
+      path: path.join(screenshots, "account-desktop.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (let i = 0; i < 5; i++) {
+      await page.locator(`[data-account-step="${i}"]`).click();
+      assert.ok(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+        `account overflow at ${i}`,
+      );
+    }
+    await page.screenshot({
+      path: path.join(screenshots, "account-mobile.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.goto(
+      "file:///" +
+        path
+          .join(root, "03-演示文稿", "account-lab.html")
+          .replaceAll("\\", "/"),
+    );
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.locator('[data-account-step="3"]').click();
+    await page.locator("#account-failure-mode").selectOption("gas");
+    await page.locator("#account-fail").click();
+    assert.equal(
+      await page.locator("#account-receipt-tag").textContent(),
+      "执行上限耗尽",
+    );
+    assert.equal(
+      await accountRow("Alice").locator("td").first().textContent(),
+      "0.97",
+    );
+    assert.equal(await page.locator("#account-alice-lab").textContent(), "100");
+    await page.locator("#account-limit").fill("20000");
+    await page.locator("#account-failure-mode").selectOption("deliberate");
+    await page.locator("#account-fail").click();
+    assert.equal(
+      await page.locator("#account-receipt-tag").textContent(),
+      "纳入前拒绝",
+    );
+    assert.equal(
+      await accountRow("Alice").locator("td").first().textContent(),
+      "0.97",
+    );
+    assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
     assert.deepEqual(errors, []);
     const networkDelayed = await browser.newPage();
     let releaseNetwork;
@@ -807,7 +960,7 @@ const server = http.createServer((req, res) => {
     );
     await delayed.close();
     console.log(
-      "Browser QA passed: exchange, LP, lending, chain selection, signatures/UTXO and node forks/reorganizations; desktop/mobile, file URLs, reduced motion, no overflow or page errors.",
+      "Browser QA passed: exchange, LP, lending, chain, signatures, forks and account/contract execution; desktop/mobile, file URLs, reduced motion, no overflow or page errors.",
     );
   } finally {
     if (browser) await browser.close();

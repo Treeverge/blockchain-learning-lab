@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>账户与合约执行 · 区块链学习实验室</title>
+    <link rel="stylesheet" href="../assets/css/lab.css" />
+    <script defer src="../assets/js/amm.js"></script>
+    <script defer src="../assets/js/account.js"></script>
+    <script defer src="../assets/js/account-lab.js"></script>
+  </head>
+  <body data-ready="false">
+    <header class="site-header">
+      <a class="brand" href="../index.html"
+        ><span class="brand-mark" aria-hidden="true">▤</span>区块链学习实验室</a
+      ><span class="header-meta">LAB 07 / 账户与合约</span>
+    </header>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">THE EXECUTION EXPERIMENT · 约 20 分钟</p>
+          <h1>
+            合约执行失败，<br />什么真的回滚了<span class="blue">？</span>
+          </h1>
+          <p class="hero-copy">
+            分开原生余额、代币账本与合约存储。<br />看 nonce
+            和费用，再检查一次失败的执行。
+          </p>
+        </div>
+        <aside class="hero-note">
+          <span class="note-index">这次，追踪执行边界</span>
+          <p>业务状态能恢复。<br />已消耗的执行不能撤回。</p>
+          <div class="note-bottom">
+            <span>账户 / Token / storage</span
+            ><span>本地教学执行器 · 虚拟资产</span>
+          </div>
+        </aside>
+      </section>
+      <p id="account-loading" class="feedback" role="status">
+        正在建立初始账户与 Token 合约账本。
+      </p>
+      <noscript><p>请启用 JavaScript，或阅读 Day 4 本地实验。</p></noscript>
+      <nav class="steps lending-steps" aria-label="账户实验步骤">
+        <button data-account-step="0" disabled><span>01</span>看账户</button
+        ><button data-account-step="1" disabled><span>02</span>交易顺序</button
+        ><button data-account-step="2" disabled><span>03</span>存储位置</button
+        ><button data-account-step="3" disabled><span>04</span>失败回滚</button
+        ><button data-account-step="4" disabled><span>05</span>授权代转</button>
+      </nav>
+      <section class="lesson-intro">
+        <p id="account-step-label" class="eyebrow">01 / 看账户</p>
+        <h2 id="account-title">同一个角色，有两种余额。</h2>
+        <p id="account-description">
+          G 在原生账户里支付执行费用；LAB 在 Token 合约的余额映射里。转 LAB
+          并不把 G 也转给收款人。
+        </p>
+      </section>
+      <div class="workbench-heading">
+        <h3>账户与合约执行工作台</h3>
+        <button id="account-reset" class="text-button" disabled>
+          重置账户与合约 ↺
+        </button>
+      </div>
+      <div class="workbench">
+        <section class="trade-panel">
+          <div class="panel-heading">
+            <h3 id="account-control-title">看账户</h3>
+            <span class="tag">G / LAB · 6 位精度</span>
+          </div>
+          <div id="account-actor-field">
+            <label class="field-label" for="account-actor"
+              >发送者<select id="account-actor" disabled>
+                <option>Alice</option>
+                <option>Bob</option>
+                <option>Eve</option>
+              </select></label
+            >
+            <p id="account-next-nonce" class="config-hint"></p>
+            <label class="field-label" for="account-limit"
+              >执行上限 gasLimit</label
+            >
+            <div class="amount-field">
+              <input
+                id="account-limit"
+                value="70000"
+                inputmode="numeric"
+                disabled
+              />
+            </div>
+            <p class="config-hint">
+              固定教学单价：0.000001 G /
+              单位。下方回执分开显示最大预算与实际费用，定额不是实际 EVM 估价。
+            </p>
+          </div>
+          <section id="account-transfer-panel">
+            <p class="account-instruction">
+              对照右侧两层账本：普通账户有 G 和 nonce；LAB 余额属于 Token
+              合约存储。
+            </p>
+            <label class="field-label" for="account-recipient"
+              >LAB 收款人<select id="account-recipient" disabled>
+                <option>Bob</option>
+                <option>Eve</option>
+                <option>Alice</option>
+              </select></label
+            ><label class="field-label" for="account-amount">LAB 数量</label>
+            <div class="amount-field">
+              <input
+                id="account-amount"
+                value="10"
+                inputmode="decimal"
+                disabled
+              />
+            </div>
+            <button id="account-transfer" class="primary lp-action" disabled>
+              提交 LAB 转账 →
+            </button>
+            <p class="config-hint">
+              转账定额 40000，默认实际费用 0.04 G，由发送者支付。LAB
+              总供应不会改变。
+            </p>
+          </section>
+          <section id="account-sequence-panel" hidden>
+            <p class="account-instruction">
+              草稿固定发送者、参数和
+              nonce。确认第一份后，再执行同一份，会在哪一步被拒绝？
+            </p>
+            <label class="field-label" for="account-nonce">草稿 nonce</label>
+            <div class="amount-field">
+              <input
+                id="account-nonce"
+                value="0"
+                inputmode="numeric"
+                disabled
+              />
+            </div>
+            <button id="account-build" class="secondary lp-action" disabled>
+              用第一步的转账参数创建草稿</button
+            ><button id="account-submit" class="primary lp-action" disabled>
+              执行 / 再次提交这份草稿 →</button
+            ><button id="account-future" class="secondary lp-action" disabled>
+              尝试执行下一位 nonce
+            </button>
+            <p class="config-hint">
+              本即时执行器要求 nonce 恰好轮到。真实网络可能暂存未来
+              nonce；交易替换策略未在这里模拟。
+            </p>
+            <p id="account-draft" class="caption account-draft">尚无草稿。</p>
+          </section>
+          <section id="account-storage-panel" hidden>
+            <label class="field-label" for="account-value"
+              >试一个新的 counter 值</label
+            >
+            <div class="amount-field">
+              <input
+                id="account-value"
+                value="9"
+                inputmode="numeric"
+                disabled
+              />
+            </div>
+            <button id="account-memory" class="secondary lp-action" disabled>
+              链外调用：只改变 memory 副本</button
+            ><button id="account-store" class="primary lp-action" disabled>
+              发送交易：写入 storage →
+            </button>
+            <p id="account-memory-result" class="caption account-draft">
+              还没有临时调用结果。
+            </p>
+            <p class="config-hint">
+              链外调用也执行计算，但不会提交状态或消耗本页 nonce / G。memory
+              不是零成本；链上执行仍计入 Gas。
+            </p>
+          </section>
+          <section id="account-failure-panel" hidden>
+            <p class="account-instruction">
+              使用 Alice 可观察完整轨迹：先尝试转 10 LAB、修改 counter
+              和产生日志，然后主动失败。
+            </p>
+            <label class="field-label" for="account-failure-mode"
+              >制造哪种失败？<select id="account-failure-mode" disabled>
+                <option value="deliberate">写入后主动回滚</option>
+                <option value="balance">LAB 余额不足</option>
+                <option value="gas">执行上限不足（30000）</option>
+              </select></label
+            ><button id="account-fail" class="primary lp-action" disabled>
+              提交失败实验，核对回执 →
+            </button>
+            <p class="config-hint">
+              默认主动回滚耗费定额 60000：业务结果撤销，但 nonce 与 0.06 G
+              费用保留。执行上限不足消耗上限；低于 21000 则在纳入前拒绝。
+            </p>
+          </section>
+          <section id="account-approval-panel" hidden>
+            <label class="field-label" for="account-owner"
+              >授权拥有者<select id="account-owner" disabled>
+                <option>Alice</option>
+                <option>Bob</option>
+                <option>Eve</option>
+              </select></label
+            ><label class="field-label" for="account-spender"
+              >允许谁代转？<select id="account-spender" disabled>
+                <option>Eve</option>
+                <option>Bob</option>
+                <option>Alice</option>
+              </select></label
+            ><label class="field-label" for="account-approval-amount"
+              >授权额度（0 表示撤销）</label
+            >
+            <div class="amount-field">
+              <input
+                id="account-approval-amount"
+                value="20"
+                inputmode="decimal"
+                disabled
+              />
+            </div>
+            <button id="account-approve" class="secondary lp-action" disabled>
+              拥有者设置授权额度</button
+            ><label class="field-label" for="account-delegated-amount"
+              >代转给 Bob 的 LAB 数量</label
+            >
+            <div class="amount-field">
+              <input
+                id="account-delegated-amount"
+                value="15"
+                inputmode="decimal"
+                disabled
+              />
+            </div>
+            <button id="account-delegate" class="primary lp-action" disabled>
+              由获准账户执行代转 →
+            </button>
+            <p class="config-hint">
+              approve 只设置权限，不转 LAB。代转执行者支付 G，拥有者支付
+              LAB；成功会减少授权，失败回滚授权与 LAB。此步使用默认上限 70000。
+            </p>
+          </section>
+          <p
+            id="account-status"
+            class="feedback lp-status"
+            role="status"
+            aria-live="polite"
+          >
+            准备中。
+          </p>
+        </section>
+        <section class="ledger-panel">
+          <div class="panel-heading">
+            <h3>外部账户 · 原生执行余额</h3>
+            <span class="tag">G 与 nonce</span>
+          </div>
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>账户</th>
+                <th>原生 G</th>
+                <th>下一笔 nonce</th>
+              </tr>
+            </thead>
+            <tbody id="account-accounts"></tbody>
+          </table>
+          <p id="account-native-total" class="caption account-conservation"></p>
+          <section class="account-contract">
+            <div class="panel-heading">
+              <h3>Token 合约 · 持久存储</h3>
+              <span class="tag">LAB 供应 150</span>
+            </div>
+            <div class="utxo-balances">
+              <div>
+                <span>Alice LAB</span
+                ><strong id="account-alice-lab">100</strong>
+              </div>
+              <div>
+                <span>Bob LAB</span><strong id="account-bob-lab">50</strong>
+              </div>
+              <div>
+                <span>Eve LAB</span><strong id="account-eve-lab">0</strong>
+              </div>
+              <div>
+                <span>counter</span><strong id="account-counter">0</strong>
+              </div>
+            </div>
+            <p id="account-allowance" class="caption"></p>
+            <p
+              id="account-token-total"
+              class="caption account-conservation"
+            ></p>
+          </section>
+          <section class="account-receipt">
+            <div class="panel-heading">
+              <h3>最近一次执行回执</h3>
+              <span id="account-receipt-tag" class="tag">尚未执行</span>
+            </div>
+            <p id="account-receipt-meta" class="caption"></p>
+            <div id="account-fee-metrics" class="account-fee-metrics"></div>
+            <p id="account-receipt-note" class="caption"></p>
+            <ol id="account-trace" class="network-events"></ol>
+            <p id="account-log-count" class="caption"></p>
+          </section>
+        </section>
+      </div>
+      <section class="reflection borrowing-reflection">
+        <p class="eyebrow">将权限、顺序与业务状态分开</p>
+        <h3>为什么回滚之后，还要检查 nonce 和原生余额？</h3>
+        <p>
+          合约业务状态回滚不等于整个交易没发生。先判断是否被纳入执行，再核对已消耗的执行费用。重复
+          nonce 属于执行前拒绝；合约 require 失败属于纳入后业务回滚。
+        </p>
+        <p>
+          上一章切换分叉，会按另一段历史重建包括费用的账本；本章的失败交易仍留在当前历史里，只回滚合约业务状态。两种“回滚”的边界不同。
+        </p>
+        <details class="utxo-answer">
+          <summary>挑战：代转成功一次，再以相同数量代转</summary>
+          <p>
+            授权 20，代转 15 后额度剩 5。第二次代转 15 会回滚 LAB
+            和授权，但获准账户的 nonce 与费用会变化。把额度设为 0
+            可撤销本模型中的后续授权。
+          </p>
+        </details>
+      </section>
+      <section class="under-the-hood">
+        <details>
+          <summary>
+            执行规则、真实合约与模型边界 <span aria-hidden="true">＋</span>
+          </summary>
+          <div class="details-content">
+            <p>
+              本页是 JavaScript 教学执行器，发送者角色视作已通过身份授权。没有
+              Ethereum 签名、EVM、RPC、真实钱包或真实资产。G / LAB 采用 6
+              位精度；普通账户的 G 和合约映射中的 LAB 是两套账本。
+            </p>
+            <p>
+              单价固定 0.000001 G；默认上限 70000、内在门槛 21000。transfer /
+              approve / transferFrom / store / transferThenFail 分别使用 40000 /
+              30000 / 50000 / 35000 / 60000 教学定额，包含内在部分。它们不是实际
+              EVM Gas 数值；require 失败也按该操作定额收费。未模拟
+              EIP-1559、费用销毁 / 小费、真实退款与网络暂存策略。
+            </p>
+            <p>
+              实际费用 = 本模型消耗单位 ×
+              单价。发送者先须有足够最大预算，成功或纳入后的失败只扣实际费用。费用进入本地归集账户；失败日志不提交。供给固定，三个账户
+              G 加费用始终 3，LAB 始终 150。
+            </p>
+            <p>
+              配套 Solidity 在本地 VM 验证部署者铸币权限、授权、memory /
+              storage，以及写后回滚的状态、日志、nonce 与真实手续费。其真实 Gas
+              与网页定额分开，不宣称精确相同。
+            </p>
+            <p>
+              <a href="../assets/js/account.js">查看教学执行模型</a> ·
+              <a
+                href="../04-六天实战源码/day4-smart-contracts/04-execution-lab.sol"
+                >查看 Solidity 回滚实验</a
+              >
+              ·
+              <a href="../04-六天实战源码/day4-smart-contracts/README.md"
+                >Day 4 本地说明</a
+              >
+              · <a href="utxo-lab.html">对照 UTXO 模型</a>
+            </p>
+          </div>
+        </details>
+      </section>
+      <div class="lesson-navigation">
+        <span id="account-progress">第 1 / 5 步</span>
+        <div>
+          <button id="account-prev" class="text-button" disabled>
+            ← 上一步</button
+          ><button id="account-next" class="secondary" disabled>
+            下一步 →
+          </button>
+        </div>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <span>区块链：从技术到信任</span
+      ><span>身份、顺序、业务状态和执行费用，分别核对。</span>
+    </footer>
+  </body>
+</html>

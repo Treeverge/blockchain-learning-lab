@@ -14,6 +14,7 @@
 - 基础路径：打开 `03-演示文稿/chain-lab.html`，体验哈希、篡改、修复、挖矿和选链。
 - 接着打开 `03-演示文稿/utxo-lab.html`，验证真实签名、找零、越权与重复花费。
 - 再打开 `03-演示文稿/network-lab.html`，传播冲突交易、制造分叉、选链并重放 UTXO。
+- 接着打开 `03-演示文稿/account-lab.html`，区分账户余额与代币存储，验证 nonce、执行费用、回滚和授权代转。
 - 打开 `03-演示文稿/defi-exchange.html`，完成约 15 分钟的交换实验。
 - 接着打开 `03-演示文稿/defi-liquidity.html`，比较提供流动性与直接持有。
 - 再打开 `03-演示文稿/defi-lending.html`，观察抵押、价格、健康因子与清算坏账。
@@ -48,7 +49,7 @@ DeFi 网页学习路径已串联：交换 → LP → 借贷。借贷实验从真
 | Day 1 | JavaScript 哈希、区块、挖矿 | 新增真实 SHA-256 哈希与选链网页；保留旧源码并注明模型差异                          |
 | Day 2 | Python 多节点、共识、分叉   | 新增三节点签名交易、PoW 分叉与 UTXO 重组网页；保留原 Python 源码，依赖版本较旧     |
 | Day 3 | 数字签名、UTXO、脚本        | 新增原生 ECDSA P-256 与 UTXO 网页；原 Python 使用 secp256k1，旧 RSA 页面保留作对照 |
-| Day 4 | 账户模型、代币合约、存储    | 保留原实验                                                                         |
+| Day 4 | 账户模型、代币合约、存储    | 新增账户 / 合约执行网页；修复 Token 部署者初始化并验证 Solidity 回滚与授权         |
 | Day 5 | AMM、DEX、借贷              | 交换、LP 与借贷网页实验；逐资产对账与清算坏账                                      |
 | Day 6 | 重入攻击、防御、工具链      | 保留原实验，尚未完成本轮校订                                                       |
 
@@ -75,7 +76,7 @@ python -X utf8 -m unittest discover -s tests -p "test_*.py"
 JavaScript 模型测试不需要安装依赖（Node.js 18 或更高版本）：
 
 ```powershell
-node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs tests/network.test.cjs
+node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs tests/network.test.cjs tests/account.test.cjs
 ```
 
 Solidity 操作步骤与单位见 [Day 5 README](04-六天实战源码/day5-defi/README.md)。浏览器与 Solidity 的开发验证方法见 [验证说明](docs/verification.md)。
@@ -97,6 +98,8 @@ assets/js/utxo.js           原生签名、交易验证与 UTXO 账本
 assets/js/utxo-lab.js       签名、越权与双花网页实验
 assets/js/network.js        节点接收、完整验链、选链与 UTXO 重放
 assets/js/network-lab.js    交易传播、分叉与重组网页交互
+assets/js/account.js        原生账户、Token 存储、nonce 与执行回滚模型
+assets/js/account-lab.js    账户、费用、临时计算与授权代转网页交互
 03-演示文稿/                新版交换实验与原有演示
 04-六天实战源码/            六个章节的本地实验
 tests/                      计算、资金守恒、浏览器、合约验证

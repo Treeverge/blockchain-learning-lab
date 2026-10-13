@@ -5,7 +5,7 @@
 ## 计算与借贷账本
 
 ```powershell
-node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs tests/network.test.cjs
+node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs tests/network.test.cjs tests/account.test.cjs
 python -X utf8 -m unittest discover -s tests -p "test_*.py"
 ```
 
@@ -24,6 +24,7 @@ $env:NODE_PATH = Join-Path $qaTools 'node_modules'
 npx.cmd --prefix $qaTools playwright install chromium
 node tests/browser-check.cjs
 node tests/solidity-check.cjs
+node tests/account-solidity-check.cjs
 ```
 
 如已安装 Chrome，可设置 `$env:CHROME_PATH` 为 Chrome 可执行文件的绝对路径，浏览器测试将使用它而不下载 Chromium。`CHROME_PATH` 只供开发脚本使用，网页不需要。
@@ -76,3 +77,12 @@ Node.js 24 下 Ganache 的原生 µWS 扩展可能不可用，工具会退回 Ja
 - 真实 Web Crypto 与 SHA-256；固定难度 1、每个非创世有效块 16 期望工作。三节点只是本地快照，不模拟真实传播、难度调整、区块奖励或绝对最终性。原 Python Day 2 实现保留且注明差异。
 - 慢速脚本加载时，导航、投递与选择控件保持禁用；初始化完成才启用。区分同一分支的落后前缀与竞争分叉，不将未同步直接称为分叉。独立复核没有发现账本完整性问题，指出的用词问题已修正并补充浏览器回归。
 - 自由操作挑战验证空块分支替换 X 后费用回到 0、X 恢复待确认，并能重新挖出。延迟真实 SHA-256 检查停止按钮：停止不改变节点高度或费用。
+
+## 账户与合约执行验证（2026-10-13）
+
+- 新增 9 项行为测试，共 53 项 JavaScript，Python 仍为 10 项。验证分层余额、最大预算与实际费用、旧 / 未来 nonce、纳入失败、内在门槛、执行上限不足、memory / storage、授权 / 撤销 / 自转和逐资产守恒。
+- 原 MyToken 在 solc 0.8.20 因未初始化 immutable \_deployer 编译失败；修复构造函数后通过相同编译与部署检查。验证仅部署者 mint、零地址拒绝、授权额度消耗和无权代转拒绝。
+- 新 ExecutionLab 在本地 Ganache VM 验证临时 memory 返回不改变 counter、storage 写入与写后主动回滚。失败回执无日志，余额 / counter 恢复，真实 nonce 增加，原生余额扣款等于 gasUsed × 回执 gasPrice；网页教学定额与实际 VM Gas 分开。
+- 浏览器检查五阶段：转10 LAB扣0.04 G、重复草稿 / 未来 nonce 拒绝不再扣款、存储与临时调用、主动回滚counter / LAB / 日志、纳入后费用与nonce、授权20代转15剩5、第二次代转失败仍收费。检查上限30000耗尽与低于21000预拒绝、桌面 / 390px无溢出、文件打开与减少动态效果。
+- JavaScript 只模拟执行状态转换，角色身份视作已验证；不包含Ethereum签名、EVM或真实钱包，G和LAB均为6位虚拟资产，未模拟EIP-1559和动态费用。真实合约仅用于开发 / Remix VM；原Python资料未在本轮全面重写。
+- 独立复核通过；额外检查63组账户 / 收款人 / 上限组合、LAB不足时授权回滚与原生余额耗尽后的最大预算拒绝。原StorageDemo的memory返回和storage数组写入也已在本地VM检查。CI使用临时依赖目录运行相同编译与VM脚本。
