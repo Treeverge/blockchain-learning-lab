@@ -1385,6 +1385,124 @@ pre {
 .lp-status {
   margin-top: 20px;
 }
+.network-nodes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.network-node {
+  display: block;
+  text-align: left;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: white;
+  color: var(--ink);
+}
+.network-node[aria-pressed="true"] {
+  border-color: var(--blue);
+  box-shadow: inset 0 3px var(--blue);
+}
+.network-node strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+.network-node span {
+  display: block;
+  font: 15px var(--mono);
+}
+.network-node small {
+  display: block;
+  line-height: 1.8;
+  margin-top: 9px;
+}
+.network-agreement {
+  margin: 16px 0 22px;
+}
+.network-node-label {
+  margin-top: 0;
+}
+.network-instruction {
+  margin-top: 20px;
+}
+.network-chain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0 10px;
+}
+.network-block {
+  border-left: 3px solid var(--blue);
+  padding: 8px 12px;
+  background: #f1f3ee;
+  font-size: 12px;
+}
+.network-hashes summary {
+  padding: 10px 0;
+}
+.network-pending {
+  margin-top: 18px;
+}
+.network-conservation {
+  margin-top: 18px;
+}
+.network-ledger th:first-child {
+  width: 22%;
+}
+.network-ledger th:nth-child(2) {
+  width: 22%;
+}
+.network-ledger td:first-child {
+  text-align: left;
+}
+.network-ledger :is(th, td):nth-child(3) {
+  padding-left: 18px;
+  text-align: left;
+}
+.network-ledger summary {
+  padding: 4px 0;
+  font: 11px/1.7 var(--mono);
+}
+.network-reorg {
+  border-top: 1px solid var(--line);
+  margin-top: 22px;
+  padding-top: 22px;
+}
+.network-reorg p {
+  margin-top: 12px;
+}
+.network-attack-report {
+  border-left: 3px solid var(--orange);
+  padding-left: 12px;
+  margin-top: 20px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.network-attack-report p {
+  margin-top: 10px;
+}
+.network-events {
+  padding-left: 20px;
+  margin-top: 22px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.network-events li {
+  padding: 8px 0;
+}
+@media (max-width: 680px) {
+  .network-nodes {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .network-node {
+    padding: 16px 18px;
+  }
+  .network-node strong {
+    margin-bottom: 8px;
+  }
+}
 .utxo-identities details {
   margin: 18px 0;
   font-size: 12px;

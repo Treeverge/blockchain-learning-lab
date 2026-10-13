@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>节点、分叉与账本重组 · 区块链学习实验室</title>
+    <link rel="stylesheet" href="../assets/css/lab.css" />
+    <script defer src="../assets/js/amm.js"></script>
+    <script defer src="../assets/js/chain.js"></script>
+    <script defer src="../assets/js/utxo.js"></script>
+    <script defer src="../assets/js/network.js"></script>
+    <script defer src="../assets/js/network-lab.js"></script>
+  </head>
+  <body data-ready="false">
+    <header class="site-header">
+      <a class="brand" href="../index.html"
+        ><span class="brand-mark" aria-hidden="true">▤</span>区块链学习实验室</a
+      ><span class="header-meta">LAB 06 / 节点与分叉</span>
+    </header>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">THE CONSENSUS EXPERIMENT · 约 20 分钟</p>
+          <h1>
+            都验过签名，<br />为什么账本还不同<span class="blue">？</span>
+          </h1>
+          <p class="hero-copy">
+            控制传播顺序，制造两段合法却冲突的历史。<br />看节点怎样选择分叉，再重建自己的
+            UTXO。
+          </p>
+        </div>
+        <aside class="hero-note">
+          <span class="note-index">这次，亲自传播分叉</span>
+          <p>先各自确认。<br />再核对共同历史。</p>
+          <div class="note-bottom">
+            <span>真实签名与 PoW · 三个独立账本</span
+            ><span>本地模拟 · 无需服务器</span>
+          </div>
+        </aside>
+      </section>
+      <p id="net-loading" class="feedback" role="status">
+        正在生成临时密钥与共同创世账本。
+      </p>
+      <noscript><p>请启用 JavaScript，或阅读 Day 2 本地源码。</p></noscript>
+      <nav class="steps lending-steps" aria-label="节点实验步骤">
+        <button data-net-step="0" disabled><span>01</span>传播交易</button
+        ><button data-net-step="1" disabled><span>02</span>制造分叉</button
+        ><button data-net-step="2" disabled><span>03</span>等工作</button
+        ><button data-net-step="3" disabled><span>04</span>重组账本</button
+        ><button data-net-step="4" disabled><span>05</span>拒绝无效链</button>
+      </nav>
+      <section class="lesson-intro">
+        <p id="net-step-label" class="eyebrow">01 / 传播交易</p>
+        <h2 id="net-title">签了两份交易，网络会先收到哪一份？</h2>
+        <p id="net-description">
+          X 给 Bob，Y 给 Eve。都由 Alice 签名，都花同一笔 70：转出 45，找零
+          24，费用 1。
+        </p>
+      </section>
+      <div class="workbench-heading">
+        <h3>三个节点 · 点击切换观察</h3>
+        <button id="net-reset" class="text-button" disabled>
+          重置全部节点与密钥 ↺
+        </button>
+      </div>
+      <div id="net-nodes" class="network-nodes" aria-label="选择观察节点"></div>
+      <p id="net-agreement" class="caption network-agreement">
+        三个节点从同一份初始账本开始。
+      </p>
+      <div class="workbench">
+        <section class="trade-panel">
+          <div class="panel-heading">
+            <h3 id="net-control-title">传播交易</h3>
+            <span class="tag">固定难度 · 1 位零</span>
+          </div>
+          <label class="field-label network-node-label" for="net-node"
+            >观察 / 操作节点<select id="net-node" disabled>
+              <option>A</option>
+              <option>B</option>
+              <option>C</option>
+            </select></label
+          >
+          <section id="net-receive-panel">
+            <p class="network-instruction">
+              先按主线投递：A、B 收到 X；C 收到 Y。待确认不等于已扣款。
+            </p>
+            <button id="net-seed" class="primary lp-action" disabled>
+              主线：把 X 给 A / B，把 Y 给 C →
+            </button>
+            <label class="field-label" for="net-transaction"
+              >也可以自由选择一份候选<select id="net-transaction" disabled>
+                <option value="X">X · Alice → Bob 45</option>
+                <option value="Y">Y · Alice → Eve 45</option>
+              </select></label
+            >
+            <button id="net-receive" class="secondary lp-action" disabled>
+              投递给所选节点
+            </button>
+            <p class="config-hint">
+              待确认池采用先收到的冲突候选，这是本地策略；它不会替其他节点确认交易或决定历史。
+            </p>
+          </section>
+          <section id="net-fork-panel" hidden>
+            <p class="network-instruction">
+              A 把 X 挖进区块，C 把 Y 挖进另一个区块。再把 A 的链给 B，形成 A /
+              B 与 C 的分歧。
+            </p>
+            <button id="net-fork" class="primary lp-action" disabled>
+              主线：挖出 X / Y 分叉，并传播 A → B →
+            </button>
+            <button id="net-mine" class="secondary lp-action" disabled>
+              为所选节点挖一个块
+            </button>
+            <p class="config-hint">
+              有待确认交易就放一笔；没有则挖空块。每块真实尝试 SHA-256，最多
+              100000 次；空块没有费用或奖励。
+            </p>
+          </section>
+          <section id="net-tie-panel" hidden>
+            <p class="network-instruction">
+              预测：A、B 两个节点都选 X，C 一个节点选 Y。把 C 的分叉给 A /
+              B，两个节点会接受吗？
+            </p>
+            <button id="net-tie" class="primary lp-action" disabled>
+              主线：传播 C → A / B →
+            </button>
+            <label class="field-label" for="net-source"
+              >自由传播：从哪个节点发送链？<select id="net-source" disabled>
+                <option>A</option>
+                <option>B</option>
+                <option selected>C</option>
+              </select></label
+            >
+            <button id="net-send" class="secondary lp-action" disabled>
+              把发送者的链给所选节点
+            </button>
+            <p class="config-hint">
+              只有完整有效、累计工作更多的候选才替换当前链。等工作保留当前链；节点数量不参与这个选链规则。
+            </p>
+          </section>
+          <section id="net-reorg-panel" hidden>
+            <p class="network-instruction">
+              C 再挖一个空块，Y 分支的有效工作从 16 增至 32。传播后，A / B
+              要撤下 X，并重放 Y。
+            </p>
+            <button id="net-extend" class="secondary lp-action" disabled>
+              主线：让 C 再挖一个空块
+            </button>
+            <button id="net-converge" class="primary lp-action" disabled>
+              主线：把 C 的更多工作传播给 A / B →
+            </button>
+            <p class="config-hint">
+              对照 Bob、Eve
+              和费用账户：旧分支的输出及费用必须撤下。被撤下的交易仍需重验输入，不能直接加回余额。
+            </p>
+            <details class="utxo-answer">
+              <summary>挑战：让旧交易回到待确认池</summary>
+              <p>
+                重置后，只把 X 给 A，再让 A 挖一块。C
+                不接收交易，连续挖两个空块，然后把 C 的链给 A。观察 X
+                是否恢复待确认、费用是否回到 0；再让 A 重新挖出
+                X。使用前几步的自由操作按钮完成。
+              </p>
+            </details>
+          </section>
+          <section id="net-invalid-panel" hidden>
+            <p class="network-instruction">
+              Eve 用自己的私钥签 Alice 的 X
+              主体，再为它挖一块和两个空块。默认主线下，它比合法链多一个块。
+            </p>
+            <button id="net-attack" class="primary lp-action" disabled>
+              挖三块无权交易候选，提交给所选节点 →
+            </button>
+            <p class="config-hint">
+              签名本身与工作量证明都可能有效。节点还必须逐块验证所有权、未花费状态、金额与完整交易摘要。
+            </p>
+            <div
+              id="net-attack-report"
+              class="network-attack-report"
+              hidden
+            ></div>
+          </section>
+          <p id="net-mining" class="config-hint">
+            每个非创世有效块记 16 单位期望工作；与本次尝试次数分开。
+          </p>
+          <button id="net-stop" class="text-button lp-action" disabled hidden>
+            停止挖矿
+          </button>
+          <p
+            id="net-status"
+            class="feedback lp-status"
+            role="status"
+            aria-live="polite"
+          >
+            准备中。
+          </p>
+        </section>
+        <section class="ledger-panel">
+          <div class="panel-heading">
+            <h3 id="net-ledger-title">节点 A · 当前选中链</h3>
+            <span id="net-ledger-tag" class="tag">高度 0</span>
+          </div>
+          <div id="net-blocks" class="network-chain"></div>
+          <details class="network-hashes">
+            <summary>展开当前链的区块哈希与交易引用 ＋</summary>
+            <code id="net-hashes" class="utxo-hex"></code>
+          </details>
+          <p id="net-pending" class="caption network-pending"></p>
+          <div class="utxo-balances">
+            <div><span>Alice</span><strong id="net-alice">100</strong></div>
+            <div><span>Bob</span><strong id="net-bob">50</strong></div>
+            <div><span>Eve</span><strong id="net-eve">0</strong></div>
+            <div><span>费用账户</span><strong id="net-fees">0</strong></div>
+          </div>
+          <div class="table-scroll">
+            <table class="ledger-table network-ledger">
+              <thead>
+                <tr>
+                  <th>归属</th>
+                  <th>未花费数量</th>
+                  <th>输出引用</th>
+                </tr>
+              </thead>
+              <tbody id="net-ledger"></tbody>
+            </table>
+          </div>
+          <p id="net-conservation" class="caption network-conservation"></p>
+          <section class="network-reorg">
+            <h3>最近一次接入 / 重组</h3>
+            <p id="net-reorg-summary" class="caption">等待传播。</p>
+            <div id="net-reorg-detail"></div>
+          </section>
+        </section>
+      </div>
+      <section class="lp-comparison">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">RECEIVE · VALIDATE · SELECT · REPLAY</p>
+            <h3>一条链被接受，要经过哪些步骤？</h3>
+          </div>
+          <span class="tag">手动传播 · 当前状态</span>
+        </div>
+        <ol id="net-events" class="network-events"></ol>
+      </section>
+      <section class="reflection borrowing-reflection">
+        <p class="eyebrow">从“我的账本”到“共同历史”</p>
+        <h3>确认过的交易，还可能被撤下吗？</h3>
+        <p>
+          这里的确认表示交易在节点当前选中的链里。未来更多有效工作可能改变它的历史；节点要恢复旧输入，再执行新分支，不能把两份冲突交易的输出叠加。
+        </p>
+        <details class="utxo-answer">
+          <summary>试着解释：X 被撤下后，为什么不能立刻再确认？</summary>
+          <p>
+            Y 已在新链花掉同一笔 70。X 的 Alice 签名仍有效，但输入已不存在于新链
+            UTXO
+            中。若撤下的是一份不冲突且仍可花费的交易，模型会把它放回待确认池，等待重新打包。
+          </p>
+        </details>
+      </section>
+      <section class="under-the-hood">
+        <details>
+          <summary>
+            计算规则与模型边界 <span aria-hidden="true">＋</span>
+          </summary>
+          <div class="details-content">
+            <p>
+              这是一个浏览器里的三个独立节点快照，没有 P2P
+              服务、真实矿工、钱包连接或资产。传播由按钮控制，不模拟网络时延、带宽、攻击者算力、手续费市场或最终性概率。
+            </p>
+            <p>
+              复用真实 P-256 签名、BigInt UTXO 和
+              SHA-256。创世锚点绑定共同初始账本；后续块绑定完整交易与公钥、签名材料的摘要。签名
+              / 地址 / 序列化不是 Bitcoin 实现。
+            </p>
+            <p>
+              固定一位十六进制前导零，非创世有效块各记 16 单位期望工作。最多 8
+              块；等工作保留当前链，更多有效工作才切换。先验证区块和所有交易，再比较工作。验证失败的长链没有有效累计工作。
+            </p>
+            <p>
+              重组使用共同初始账本完整重放，小链便于核对；真实实现会使用更复杂的数据库与撤销机制。孤立交易重新校验后才进入待确认池，池内冲突采用先保存策略。费用账户是教学对账设定；空块没有费用和奖励。
+            </p>
+            <p>
+              <a href="../assets/js/network.js">查看节点与重放模型</a> ·
+              <a href="chain-lab.html">哈希与选链</a> ·
+              <a href="utxo-lab.html">签名与 UTXO</a> ·
+              <a href="../04-六天实战源码/day2-python-blockchain/README.md"
+                >Day 2 原实战说明</a
+              >
+            </p>
+          </div>
+        </details>
+      </section>
+      <div class="lesson-navigation">
+        <span id="net-progress">第 1 / 5 步</span>
+        <div>
+          <button id="net-prev" class="text-button" disabled>← 上一步</button
+          ><button id="net-next" class="secondary" disabled>下一步 →</button>
+        </div>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <span>区块链：从技术到信任</span
+      ><span>接收、校验、选链，再重建账本。</span>
+    </footer>
+  </body>
+</html>

@@ -1,3 +1,15 @@
+# Day 2 网页实验：节点、分叉与账本重组
+
+先打开 [本地节点实验](../../03-演示文稿/network-lab.html)，或访问 [在线实验](https://treeverge.github.io/blockchain-learning-lab/03-%E6%BC%94%E7%A4%BA%E6%96%87%E7%A8%BF/network-lab.html)。它把新增哈希与签名模型串起来，无需后台服务或安装 Python 依赖。
+
+默认主线：A / B 收到 X（给 Bob），C 收到 Y（给 Eve）；两份都由 Alice 签名并花同一输入。分别挖块后，两条链各有 16 单位有效工作，等工作传播暂不切换。C 再挖一空块后传播，A / B 撤下 X 的分支并重放 Y，Bob 从 95 回到 50，Eve 变为 45，费用仍为 1。无权花费的三块候选即使证明工作更多，也会拒绝。
+
+本地待确认池策略、交易有效性与选链是分开的检查。重组后，旧分支交易重新校验；有未花费输入的可恢复待确认，与新链冲突的丢弃。确认是当前选中链里的状态，不等于不可逆。
+
+边界：三个节点在同一浏览器里，是手动传播的独立快照，不是真实 P2P。固定难度、P-256 签名、完整交易摘要与费用账户是教学规则，不是完整 Bitcoin 实现。旧 Python 源码依赖及规则尚未完成本轮全面校订，不能据此声称它与新网页实现相同。
+
+以下保留 Daniel van Flymen 上游 README 与原有来源链接。许可见本目录 LICENSE 与根目录 THIRD_PARTY.md。
+
 # Are you looking for the source code for my book?
 
 Please find it here: https://github.com/dvf/blockchain-book

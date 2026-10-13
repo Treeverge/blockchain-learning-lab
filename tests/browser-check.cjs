@@ -559,7 +559,216 @@ const server = http.createServer((req, res) => {
     assert.match(await page.locator("#utxo-status").textContent(), /已花费/);
     assert.equal(await page.locator("#utxo-fees").textContent(), "0");
     assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.goto(base + "/03-演示文稿/network-lab.html");
+    await page.waitForFunction(
+      () =>
+        document.body.dataset.ready === "true" &&
+        !document.querySelector("#net-reset").disabled,
+    );
+    const idleNetwork = () =>
+      page.waitForFunction(
+        () => !document.querySelector("#net-reset").disabled,
+      );
+    await page.locator("#net-seed").click();
+    await idleNetwork();
+    assert.equal(await page.locator("#net-bob").textContent(), "50");
+    assert.match(await page.locator("#net-pending").textContent(), /X → Bob/);
+    await page.locator("#net-transaction").selectOption("Y");
+    await page.locator("#net-receive").click();
+    await idleNetwork();
+    assert.match(await page.locator("#net-status").textContent(), /池内冲突/);
+    assert.equal(await page.locator("#net-bob").textContent(), "50");
+    await page.locator('[data-net-step="1"]').click();
+    await page.locator("#net-fork").click();
+    await idleNetwork();
+    assert.match(
+      await page.locator("#net-agreement").textContent(),
+      /当前存在分叉/,
+    );
+    assert.equal(await page.locator("#net-bob").textContent(), "95");
+    assert.equal(await page.locator("#net-fees").textContent(), "1");
+    await page.locator('[data-net-node="C"]').click();
+    assert.equal(await page.locator("#net-bob").textContent(), "50");
+    assert.equal(await page.locator("#net-eve").textContent(), "45");
+    await page.locator('[data-net-node="A"]').click();
+    await page.locator('[data-net-step="2"]').click();
+    await page.locator("#net-tie").click();
+    await idleNetwork();
+    assert.match(
+      await page.locator("#net-status").textContent(),
+      /累计工作相同/,
+    );
+    assert.equal(await page.locator("#net-bob").textContent(), "95");
+    await page.locator('[data-net-step="3"]').click();
+    await page.locator("#net-extend").click();
+    await idleNetwork();
+    assert.equal(await page.locator("#net-bob").textContent(), "95");
+    await page.locator("#net-converge").click();
+    await idleNetwork();
+    assert.equal(await page.locator("#net-bob").textContent(), "50");
+    assert.equal(await page.locator("#net-eve").textContent(), "45");
+    assert.equal(await page.locator("#net-alice").textContent(), "54");
+    assert.equal(await page.locator("#net-fees").textContent(), "1");
+    assert.match(
+      await page.locator("#net-agreement").textContent(),
+      /末块相同/,
+    );
+    assert.match(
+      await page.locator("#net-reorg-summary").textContent(),
+      /撤下 1 块，接入 2 块/,
+    );
+    assert.match(
+      await page.locator("#net-reorg-detail").textContent(),
+      /签名仍有效.*已花费/,
+    );
+    await page.locator('[data-net-step="4"]').click();
+    await page.locator("#net-attack").click();
+    await idleNetwork();
+    assert.match(
+      await page.locator("#net-attack-report").textContent(),
+      /48 证明工作，0 有效工作/,
+    );
+    assert.match(
+      await page.locator("#net-attack-report").textContent(),
+      /真实验签：通过；输入所有者：未通过/,
+    );
+    assert.match(await page.locator("#net-status").textContent(), /所有者/);
+    assert.match(await page.locator("#net-mining").textContent(), /挖矿已完成/);
+    assert.equal(
+      await page.locator("#net-ledger-tag").textContent(),
+      "高度 2 · 工作 32",
+    );
+    assert.equal(await page.locator("#net-fees").textContent(), "1");
+    await page.screenshot({
+      path: path.join(screenshots, "network-desktop.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (let i = 0; i < 5; i++) {
+      await page.locator(`[data-net-step="${i}"]`).click();
+      assert.ok(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+        `network overflow at step ${i}`,
+      );
+    }
+    await page.locator(".network-hashes").evaluate((n) => (n.open = true));
+    await page
+      .locator("#net-ledger details")
+      .evaluateAll((nodes) => nodes.forEach((n) => (n.open = true)));
+    assert.ok(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+      "expanded network hashes must fit mobile",
+    );
+    await page.screenshot({
+      path: path.join(screenshots, "network-mobile.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.goto(
+      "file:///" +
+        path
+          .join(root, "03-演示文稿", "network-lab.html")
+          .replaceAll("\\", "/"),
+    );
+    await page.waitForFunction(
+      () =>
+        document.body.dataset.ready === "true" &&
+        !document.querySelector("#net-reset").disabled,
+    );
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.locator("#net-receive").click();
+    await idleNetwork();
+    await page.locator('[data-net-step="1"]').click();
+    await page.locator("#net-mine").click();
+    await idleNetwork();
+    assert.match(
+      await page.locator("#net-agreement").textContent(),
+      /节点尚未同步/,
+    );
+    assert.equal(await page.locator("#net-bob").textContent(), "95");
+    await page.locator('[data-net-step="2"]').click();
+    await page.locator("#net-source").selectOption("A");
+    await page.locator("#net-node").selectOption("B");
+    await page.locator("#net-send").click();
+    await idleNetwork();
+    assert.equal(await page.locator("#net-bob").textContent(), "95");
+    await page.locator('[data-net-step="1"]').click();
+    await page.locator("#net-node").selectOption("C");
+    for (let i = 0; i < 2; i++) {
+      await page.locator("#net-mine").click();
+      await idleNetwork();
+    }
+    await page.locator('[data-net-step="2"]').click();
+    await page.locator("#net-source").selectOption("C");
+    await page.locator("#net-node").selectOption("A");
+    await page.locator("#net-send").click();
+    await idleNetwork();
+    assert.equal(await page.locator("#net-alice").textContent(), "100");
+    assert.equal(await page.locator("#net-bob").textContent(), "50");
+    assert.equal(await page.locator("#net-fees").textContent(), "0");
+    assert.match(await page.locator("#net-pending").textContent(), /X → Bob/);
+    assert.match(
+      await page.locator("#net-reorg-detail").textContent(),
+      /恢复待确认 1 笔/,
+    );
+    await page.locator('[data-net-step="1"]').click();
+    await page.locator("#net-mine").click();
+    await idleNetwork();
+    assert.equal(await page.locator("#net-bob").textContent(), "95");
+    assert.equal(await page.locator("#net-fees").textContent(), "1");
+    // Slow real SHA-256 to exercise the cancellation control without replacing the computation.
+    await page.evaluate(() => {
+      const digest = crypto.subtle.digest.bind(crypto.subtle);
+      crypto.subtle.digest = async (...args) => {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+        return digest(...args);
+      };
+    });
+    const beforeStop = await page.locator("#net-ledger-tag").textContent();
+    await page.locator("#net-mine").click();
+    await page.locator("#net-stop").click();
+    await idleNetwork();
+    assert.match(await page.locator("#net-status").textContent(), /停止/);
+    assert.equal(
+      await page.locator("#net-ledger-tag").textContent(),
+      beforeStop,
+    );
+    assert.equal(await page.locator("#net-fees").textContent(), "1");
+    assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
     assert.deepEqual(errors, []);
+    const networkDelayed = await browser.newPage();
+    let releaseNetwork;
+    const networkGate = new Promise((resolve) => {
+      releaseNetwork = resolve;
+    });
+    await networkDelayed.route("**/assets/js/network.js", async (route) => {
+      await networkGate;
+      await route.continue();
+    });
+    const networkNavigation = networkDelayed.goto(
+      base + "/03-演示文稿/network-lab.html",
+    );
+    // A closing browser must not mask a failed initialization assertion with an unhandled navigation rejection.
+    networkNavigation.catch(() => {});
+    await networkDelayed.locator('[data-net-step="1"]').waitFor();
+    assert.ok(await networkDelayed.locator('[data-net-step="1"]').isDisabled());
+    assert.ok(await networkDelayed.locator("#net-seed").isDisabled());
+    assert.ok(await networkDelayed.locator("#net-node").isDisabled());
+    releaseNetwork();
+    await networkNavigation;
+    await networkDelayed.waitForFunction(
+      () =>
+        document.body.dataset.ready === "true" &&
+        !document.querySelector("#net-seed").disabled,
+    );
+    await networkDelayed.close();
     const delayed = await browser.newPage();
     let releaseScript;
     const scriptGate = new Promise((resolve) => {
@@ -598,7 +807,7 @@ const server = http.createServer((req, res) => {
     );
     await delayed.close();
     console.log(
-      "Browser QA passed: exchange, LP, lending, chain selection and real signatures/UTXO; desktop/mobile, file URLs, reduced motion, no overflow or page errors.",
+      "Browser QA passed: exchange, LP, lending, chain selection, signatures/UTXO and node forks/reorganizations; desktop/mobile, file URLs, reduced motion, no overflow or page errors.",
     );
   } finally {
     if (browser) await browser.close();

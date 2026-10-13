@@ -5,7 +5,7 @@
 ## 计算与借贷账本
 
 ```powershell
-node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs
+node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs tests/network.test.cjs
 python -X utf8 -m unittest discover -s tests -p "test_*.py"
 ```
 
@@ -68,3 +68,11 @@ Node.js 24 下 Ganache 的原生 µWS 扩展可能不可用，工具会退回 Ja
 - 新增 8 项 JavaScript 测试，共 35 项；Python 仍为 10 项。检查真实签名、私钥不可导出、主体全部字段绑定、缺失签名、重哈希篡改、错误所有者、多输入、找零与费用、零费无找零、非法输出和 ID、重复确认与冲突拒绝。
 - 浏览器检查未签名、篡改确认失败不扣款、Eve 签名有效但无权限、确认后 Alice 54 / Bob 95 / 费用 1、冲突拒绝后签名仍有效、反向确认顺序、零手续费、五步手机与展开长字段无横向溢出、直接双击和减少动态效果。
 - 网页 P-256 与原 Python secp256k1 不同；主体 ID 不含签名，指纹不是 Bitcoin 地址。当前只实现本地确认账本，没有真实网络共识、挖矿打包、持久化与分叉回滚。
+
+## 节点、分叉与重组验证（2026-10-13）
+
+- 新增 9 项 JavaScript 行为测试，共 44 项；Python 仍为 10 项。验证独立节点、待确认不扣款、池内冲突策略、真实证明、等工作不切换、重放与费用替换、无权交易长链拒绝、完整签名材料承诺、有效孤立交易恢复、取消不提交。
+- 浏览器检查默认五步：X / Y 独立传播、池内冲突不扣款、分叉挖矿、等工作保留、空块增加工作后重组、Bob 50 / Eve 45 / Alice 54 / 费用 1、签名仍有效但已花费的 X 丢弃、48 证明工作但 0 有效工作的无权候选拒绝。也检查自由单节点挖矿与传播、390px 全阶段和展开长哈希 / 引用无溢出、文件直接打开与减少动态效果。
+- 真实 Web Crypto 与 SHA-256；固定难度 1、每个非创世有效块 16 期望工作。三节点只是本地快照，不模拟真实传播、难度调整、区块奖励或绝对最终性。原 Python Day 2 实现保留且注明差异。
+- 慢速脚本加载时，导航、投递与选择控件保持禁用；初始化完成才启用。区分同一分支的落后前缀与竞争分叉，不将未同步直接称为分叉。独立复核没有发现账本完整性问题，指出的用词问题已修正并补充浏览器回归。
+- 自由操作挑战验证空块分支替换 X 后费用回到 0、X 恢复待确认，并能重新挖出。延迟真实 SHA-256 检查停止按钮：停止不改变节点高度或费用。
