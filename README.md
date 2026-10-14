@@ -15,6 +15,7 @@
 - 接着打开 `03-演示文稿/utxo-lab.html`，验证真实签名、找零、越权与重复花费。
 - 再打开 `03-演示文稿/network-lab.html`，传播冲突交易、制造分叉、选链并重放 UTXO。
 - 接着打开 `03-演示文稿/account-lab.html`，区分账户余额与代币存储，验证 nonce、执行费用、回滚和授权代转。
+- 再打开 `03-演示文稿/security-lab.html`，逐帧查看重入、对照 CEI / 锁，并改变回调失败的传播方式。
 - 打开 `03-演示文稿/defi-exchange.html`，完成约 15 分钟的交换实验。
 - 接着打开 `03-演示文稿/defi-liquidity.html`，比较提供流动性与直接持有。
 - 再打开 `03-演示文稿/defi-lending.html`，观察抵押、价格、健康因子与清算坏账。
@@ -51,7 +52,7 @@ DeFi 网页学习路径已串联：交换 → LP → 借贷。借贷实验从真
 | Day 3 | 数字签名、UTXO、脚本        | 新增原生 ECDSA P-256 与 UTXO 网页；原 Python 使用 secp256k1，旧 RSA 页面保留作对照 |
 | Day 4 | 账户模型、代币合约、存储    | 新增账户 / 合约执行网页；修复 Token 部署者初始化并验证 Solidity 回滚与授权         |
 | Day 5 | AMM、DEX、借贷              | 交换、LP 与借贷网页实验；逐资产对账与清算坏账                                      |
-| Day 6 | 重入攻击、防御、工具链      | 保留原实验，尚未完成本轮校订                                                       |
+| Day 6 | 重入攻击、防御、工具链      | 新增重入网页与实际现金 / 债权对账；Python、Solidity 和失败传播已验证               |
 
 没有把所有章节标为完成或生产可用。原分享材料中的绝对化技术表述仍需逐步校订。每个教学模型都应与真实协议的实现边界区分。
 
@@ -76,7 +77,7 @@ python -X utf8 -m unittest discover -s tests -p "test_*.py"
 JavaScript 模型测试不需要安装依赖（Node.js 18 或更高版本）：
 
 ```powershell
-node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs tests/network.test.cjs tests/account.test.cjs
+node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs tests/network.test.cjs tests/account.test.cjs tests/security.test.cjs
 ```
 
 Solidity 操作步骤与单位见 [Day 5 README](04-六天实战源码/day5-defi/README.md)。浏览器与 Solidity 的开发验证方法见 [验证说明](docs/verification.md)。
@@ -100,6 +101,8 @@ assets/js/network.js        节点接收、完整验链、选链与 UTXO 重放
 assets/js/network-lab.js    交易传播、分叉与重组网页交互
 assets/js/account.js        原生账户、Token 存储、nonce 与执行回滚模型
 assets/js/account-lab.js    账户、费用、临时计算与授权代转网页交互
+assets/js/security.js       有界重入、实际资金与分层回滚模型
+assets/js/security-lab.js   防护对照、失败传播与逐帧轨迹网页交互
 03-演示文稿/                新版交换实验与原有演示
 04-六天实战源码/            六个章节的本地实验
 tests/                      计算、资金守恒、浏览器、合约验证

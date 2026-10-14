@@ -12,3 +12,4 @@ venv/
 Thumbs.db
 04-六天实战源码/day1-simple-js-blockchain/lib/
 .qa/
+.validation-temp/

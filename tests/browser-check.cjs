@@ -895,6 +895,154 @@ const server = http.createServer((req, res) => {
       "0.97",
     );
     assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.goto(base + "/03-演示文稿/security-lab.html");
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    await page.locator("#security-run").click();
+    assert.equal(await page.locator("#security-cash").textContent(), "3");
+    assert.equal(await page.locator("#security-claims").textContent(), "3");
+    assert.equal(await page.locator("#security-gap").textContent(), "0");
+    assert.match(
+      await page.locator("#security-frame-index").textContent(),
+      /帧 1/,
+    );
+    await page.locator("#security-frame-next").click();
+    assert.match(
+      await page.locator("#security-frame").textContent(),
+      /进入 withdraw/,
+    );
+    await page.locator("#security-frame-end").click();
+    assert.match(
+      await page.locator("#security-frame").textContent(),
+      /最终提交/,
+    );
+    await page.locator('[data-security-step="1"]').click();
+    await page.locator("#security-run").click();
+    assert.equal(await page.locator("#security-cash").textContent(), "0");
+    assert.equal(await page.locator("#security-received").textContent(), "6");
+    assert.equal(await page.locator("#security-gap").textContent(), "5");
+    await page
+      .locator("#security-timeline button")
+      .filter({ hasText: "Attacker.receive" })
+      .first()
+      .click();
+    assert.match(
+      await page.locator("#security-frame").textContent(),
+      /Attacker债权 1 G \/ 已收 1 G/,
+    );
+    await page.screenshot({
+      path: path.join(screenshots, "security-desktop.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.locator("#security-honest-after").click();
+    assert.equal(
+      await page.locator("#security-receipt-tag").textContent(),
+      "提款已回滚",
+    );
+    assert.equal(await page.locator("#security-cash").textContent(), "0");
+    assert.equal(await page.locator("#security-gap").textContent(), "5");
+    await page.locator('[data-security-step="2"]').click();
+    for (const mode of ["cei", "lock"]) {
+      await page.locator("#security-mode").selectOption(mode);
+      await page.locator("#security-run").click();
+      assert.equal(await page.locator("#security-received").textContent(), "1");
+      assert.equal(await page.locator("#security-cash").textContent(), "5");
+      await page
+        .locator("#security-timeline button")
+        .filter({ hasText: "Attacker.receive" })
+        .first()
+        .click();
+      assert.match(
+        await page.locator("#security-frame").textContent(),
+        mode === "cei" ? /Attacker债权 0 G/ : /Attacker债权 1 G.*锁 占用/,
+      );
+    }
+    assert.match(
+      await page.locator("#security-run-config").textContent(),
+      /单独重入锁/,
+    );
+    await page.locator("#security-mode").selectOption("vulnerable");
+    assert.match(
+      await page.locator("#security-status").textContent(),
+      /属于上次运行/,
+    );
+    assert.match(
+      await page.locator("#security-run-config").textContent(),
+      /单独重入锁/,
+    );
+    assert.equal(await page.locator("#security-cash").textContent(), "5");
+    await page.locator("#security-run").click();
+    assert.match(
+      await page.locator("#security-run-config").textContent(),
+      /漏洞版本/,
+    );
+    assert.equal(await page.locator("#security-cash").textContent(), "0");
+    await page.locator('[data-security-step="3"]').click();
+    await page.locator("#security-run").click();
+    assert.equal(
+      await page.locator("#security-receipt-tag").textContent(),
+      "提款已回滚",
+    );
+    assert.equal(await page.locator("#security-received").textContent(), "0");
+    assert.equal(await page.locator("#security-cash").textContent(), "6");
+    await page.locator("#security-catch").selectOption("catch");
+    await page.locator("#security-run").click();
+    assert.equal(await page.locator("#security-received").textContent(), "1");
+    await page.locator("#security-reject").selectOption("yes");
+    await page.locator("#security-run").click();
+    assert.equal(await page.locator("#security-cash").textContent(), "6");
+    await page.locator("#security-reject").selectOption("no");
+    await page.locator("#security-mode").selectOption("vulnerable");
+    await page.locator("#security-limit").fill("7");
+    await page.locator("#security-catch").selectOption("bubble");
+    await page.locator("#security-run").click();
+    assert.equal(await page.locator("#security-received").textContent(), "0");
+    await page.locator("#security-catch").selectOption("catch");
+    await page.locator("#security-run").click();
+    assert.equal(await page.locator("#security-received").textContent(), "6");
+    await page.locator("#security-limit").fill("9");
+    await page.locator("#security-run").click();
+    assert.match(await page.locator("#security-status").textContent(), /1至8/);
+    assert.equal(await page.locator("#security-received").textContent(), "6");
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (let i = 0; i < 4; i++) {
+      await page.locator(`[data-security-step="${i}"]`).click();
+      await page.locator("#security-run").click();
+      assert.ok(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+        `security overflow ${i}`,
+      );
+    }
+    await page
+      .locator(".under-hood details")
+      .last()
+      .evaluate((n) => (n.open = true));
+    assert.ok(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    );
+    await page.screenshot({
+      path: path.join(screenshots, "security-mobile.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.goto(
+      "file:///" +
+        path
+          .join(root, "03-演示文稿", "security-lab.html")
+          .replaceAll("\\", "/"),
+    );
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.locator('[data-security-step="1"]').click();
+    await page.locator("#security-run").click();
+    assert.equal(await page.locator("#security-gap").textContent(), "5");
+    assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
     assert.deepEqual(errors, []);
     const networkDelayed = await browser.newPage();
     let releaseNetwork;
@@ -960,7 +1108,7 @@ const server = http.createServer((req, res) => {
     );
     await delayed.close();
     console.log(
-      "Browser QA passed: exchange, LP, lending, chain, signatures, forks and account/contract execution; desktop/mobile, file URLs, reduced motion, no overflow or page errors.",
+      "Browser QA passed: exchange, LP, lending, chain, signatures, forks, accounts and reentrancy; desktop/mobile, file URLs, reduced motion, no overflow or page errors.",
     );
   } finally {
     if (browser) await browser.close();

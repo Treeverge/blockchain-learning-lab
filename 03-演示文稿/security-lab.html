@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>重入与安全边界 · 区块链学习实验室</title>
+    <link rel="stylesheet" href="../assets/css/lab.css" />
+    <script defer src="../assets/js/security.js"></script>
+    <script defer src="../assets/js/security-lab.js"></script>
+  </head>
+  <body data-ready="false">
+    <header class="site-header">
+      <a class="brand" href="../index.html"
+        ><span class="brand-mark" aria-hidden="true">▤</span>区块链学习实验室</a
+      ><span class="header-meta">LAB 08 / 合约安全</span>
+    </header>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">THE REENTRANCY EXPERIMENT · 约 20 分钟</p>
+          <h1>钱已经转出，<br />账为什么还没改<span class="blue">？</span></h1>
+          <p class="hero-copy">
+            把外部回调展开，一层一层看。<br />再用实际资金检验“提款成功”意味着什么。
+          </p>
+        </div>
+        <aside class="hero-note">
+          <span class="note-index">这次，追踪控制权</span>
+          <p>转账调用外部代码。<br />外部代码能再回来。</p>
+          <div class="note-bottom">
+            <span>现金 / 债权 / 调用栈</span
+            ><span>本地教学执行器 · 虚拟资产</span>
+          </div>
+        </aside>
+      </section>
+      <p id="security-loading" class="feedback" role="status">
+        正在建立银行与接收者账本。
+      </p>
+      <noscript><p>请启用 JavaScript，或阅读 Day 6 本地实验。</p></noscript>
+      <nav class="steps security-steps" aria-label="安全实验步骤">
+        <button data-security-step="0" disabled><span>01</span>正常提款</button
+        ><button data-security-step="1" disabled><span>02</span>重入攻击</button
+        ><button data-security-step="2" disabled><span>03</span>防护对照</button
+        ><button data-security-step="3" disabled>
+          <span>04</span>失败传播
+        </button>
+      </nav>
+      <section class="lesson-intro">
+        <p id="security-step-label" class="eyebrow">01 / 正常提款</p>
+        <h2 id="security-title">先分开银行的钱与欠款。</h2>
+        <p id="security-description">
+          银行实际持有6
+          G；Alice可取3、Bob可取2、攻击合约可取1。债权不能再加进总资产。
+        </p>
+      </section>
+      <div class="workbench-heading">
+        <h3>重入与偿付工作台</h3>
+        <button id="security-reset" class="text-button" disabled>
+          重置实验 ↺
+        </button>
+      </div>
+      <div class="workbench">
+        <section class="trade-panel">
+          <div class="panel-heading">
+            <h3>安排这次提款</h3>
+            <span class="tag">整数 G · 虚拟资金</span>
+          </div>
+          <p class="account-instruction">
+            存款已在先前完成。每次“运行提款”从6
+            G的同一初态开始；回滚只撤销本次提款。
+          </p>
+          <div id="security-options" hidden>
+            <label class="field-label" for="security-mode"
+              >银行实现<select id="security-mode" disabled>
+                <option value="vulnerable">先转账，后改账（漏洞）</option>
+                <option value="cei">先改账，后转账（CEI）</option>
+                <option value="lock">加锁，先转账后改账（锁对照）</option>
+              </select></label
+            >
+            <label class="field-label" for="security-limit"
+              >攻击合约最多接收次数（1–8）</label
+            >
+            <div class="amount-field">
+              <input
+                id="security-limit"
+                value="6"
+                inputmode="numeric"
+                disabled
+              />
+            </div>
+            <label class="field-label" for="security-catch"
+              >回调里的失败处理<select id="security-catch" disabled>
+                <option value="catch">捕获内层失败，正常返回</option>
+                <option value="bubble">向外传播，外层也失败</option>
+              </select></label
+            >
+            <div id="security-reject-field" hidden>
+              <label class="field-label" for="security-reject"
+                >接收合约行为<select id="security-reject" disabled>
+                  <option value="no">接收并尝试重入</option>
+                  <option value="yes">主动拒收</option>
+                </select></label
+              >
+            </div>
+          </div>
+          <pre
+            id="security-code"
+            class="security-code"
+            aria-label="本次提款的简化执行顺序"
+          ></pre>
+          <button id="security-run" class="primary lp-action" disabled>
+            运行 Alice 正常提款 →
+          </button>
+          <button
+            id="security-honest-after"
+            class="secondary lp-action"
+            disabled
+            hidden
+          >
+            用攻击后的银行偿付 Alice →
+          </button>
+          <p class="config-hint">
+            偿付按钮延续攻击后的账本。其他运行都独立重置，方便比较。网页不计 Gas
+            和 nonce；本地真实 VM 单独验证费用。
+          </p>
+          <p id="security-status" class="feedback lp-status" role="status">
+            先预测：Alice取走3 G后，银行还欠多少？
+          </p>
+        </section>
+        <section class="ledger-panel">
+          <div class="panel-heading">
+            <h3>最近一次执行的最终账本</h3>
+            <span id="security-receipt-tag" class="tag">尚未执行</span>
+          </div>
+          <p id="security-run-config" class="config-hint">
+            尚未运行，显示初始状态。
+          </p>
+          <div class="utxo-balances security-balances">
+            <div>
+              <span>银行实际资金 G</span><strong id="security-cash">6</strong>
+            </div>
+            <div>
+              <span>用户债权合计 G</span><strong id="security-claims">6</strong>
+            </div>
+            <div>
+              <span>攻击合约收到 G</span
+              ><strong id="security-received">0</strong>
+            </div>
+            <div>
+              <span>偿付缺口 G</span><strong id="security-gap">0</strong>
+            </div>
+          </div>
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>角色</th>
+                <th>尚可提款 G</th>
+                <th>银行外已收 G</th>
+              </tr>
+            </thead>
+            <tbody id="security-ledger"></tbody>
+          </table>
+          <p id="security-total" class="config-hint">
+            银行与银行外资金合计6 G。
+          </p>
+          <p id="security-verdict" class="account-instruction">
+            债权表示银行的义务；实际现金表示银行能付多少钱。
+          </p>
+        </section>
+      </div>
+      <section class="lp-comparison security-trace-panel">
+        <div class="panel-heading">
+          <h3>逐层调用轨迹</h3>
+          <span id="security-frame-index" class="tag">等待运行</span>
+        </div>
+        <p class="config-hint">
+          以下是执行期间的临时快照；上方是最终账本。翻阅轨迹不会再次执行或改变余额。外部调用成功返回后，外层仍可能失败。
+        </p>
+        <div class="security-trace-actions">
+          <button id="security-frame-prev" class="text-button" disabled>
+            ← 上一帧</button
+          ><button id="security-frame-next" class="secondary" disabled>
+            推进一帧 →</button
+          ><button id="security-frame-end" class="text-button" disabled>
+            看最终提交
+          </button>
+        </div>
+        <div id="security-frame" class="security-frame" aria-live="polite">
+          <p>运行一次提款，展开调用与回滚。</p>
+        </div>
+        <div class="security-timeline-wrap">
+          <ol
+            id="security-timeline"
+            class="security-timeline"
+            aria-label="执行帧列表"
+          ></ol>
+        </div>
+      </section>
+      <section class="under-hood">
+        <details>
+          <summary>
+            解释题：锁挡住了重入，为什么有时连1 G也没有收到？
+            <span aria-hidden="true">＋</span>
+          </summary>
+          <div class="details-content">
+            <p>
+              第二次进入被锁拒绝。回调若捕获这个失败并正常返回，第一次提款仍能完成；回调若将失败抛到外层，银行的外部call失败，require让整笔提款回滚，临时转账也撤销。存款是先前交易，债权1仍保留。
+            </p>
+            <p>
+              尝试把最多接收次数改为7：漏洞银行第七次付款因现金不足失败。分别捕获和传播，解释为什么最终资金差别很大。再把次数改为1，观察没有重入时三种实现。
+            </p>
+          </div>
+        </details>
+        <details>
+          <summary>
+            规则、真实合约与模型边界 <span aria-hidden="true">＋</span>
+          </summary>
+          <div class="details-content">
+            <p>
+              JavaScript与Python使用相同整数样例，模拟外部控制权、事务快照和回滚，不包含EVM、真实资产、签名、网络、Gas或nonce。G只是本页虚拟计量单位。初始6
+              G包括攻击合约此前存入的1 G；它收到6 G时，超出自身债权的5
+              G来自其他存款人的资金。
+            </p>
+            <p>
+              为看清锁的独立作用，网页锁版本保留“先转账后清债权”；Solidity另保留CEI加锁组合。这里的锁只覆盖withdraw，不能证明其他入口或真实协议整体安全；重入也可能跨函数或跨合约。模型不模拟强制转入、利息、费用、只读重入及复杂跨合约共享状态。
+            </p>
+            <p>
+              真实VM中的失败提款仍消耗Gas并增加发送者nonce，业务转账和事件则恢复；网页只展示银行业务资金。逐帧缺口可能是尚未完成记账的临时状态，应结合最终回执判断。
+            </p>
+            <p>
+              <a href="../assets/js/security.js">查看网页模型</a> ·
+              <a href="../04-六天实战源码/day6-security/02-reentrancy-sol.sol"
+                >查看可部署 Solidity</a
+              >
+              ·
+              <a href="../04-六天实战源码/day6-security/README.md"
+                >Day 6 本地说明</a
+              >
+              · <a href="account-lab.html">回顾账户与费用回滚</a>
+            </p>
+          </div>
+        </details>
+      </section>
+      <div class="lesson-navigation">
+        <span id="security-progress">第1 / 4步</span>
+        <div>
+          <button id="security-prev" class="text-button" disabled>
+            ← 上一步</button
+          ><button id="security-next" class="secondary" disabled>
+            下一步 →
+          </button>
+        </div>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <span>区块链：从技术到信任</span
+      ><span>控制权能返回，旧账不能重复支付。</span>
+    </footer>
+  </body>
+</html>
