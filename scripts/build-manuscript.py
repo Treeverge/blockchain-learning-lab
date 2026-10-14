@@ -145,10 +145,11 @@ def docx_document(items):
         "word/_rels/document.xml.rels": f'<Relationships {rel_ns}><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>{"".join(relationships)}</Relationships>',
     }
     output = io.BytesIO()
-    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_STORED) as archive:
         for name, content in files.items():
             info = zipfile.ZipInfo(name, date_time=(2026, 10, 14, 0, 0, 0))
-            info.compress_type = zipfile.ZIP_DEFLATED
+            info.create_system = 0
+            info.compress_type = zipfile.ZIP_STORED
             archive.writestr(info, ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + content).encode("utf-8"))
     return output.getvalue()
 
@@ -158,7 +159,16 @@ def main():
     for extension, result in ((".html", html_document(items)), (".docx", docx_document(items))):
         destination = SOURCE.with_suffix(extension)
         if "--check" in sys.argv:
-            if destination.read_bytes() != result:
+            matches = destination.read_bytes() == result
+            if extension == ".docx" and not matches:
+                # ZIP metadata and compression can differ across Python/OS versions.
+                # A Word document is current when its exact package parts are current.
+                with zipfile.ZipFile(destination) as existing, zipfile.ZipFile(io.BytesIO(result)) as expected:
+                    matches = existing.namelist() == expected.namelist() and all(
+                        existing.read(name) == expected.read(name)
+                        for name in expected.namelist()
+                    )
+            if not matches:
                 raise SystemExit(f"Stale generated manuscript: {destination.name}")
         else:
             destination.write_bytes(result)
