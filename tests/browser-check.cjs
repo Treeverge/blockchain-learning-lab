@@ -64,6 +64,7 @@ const server = http.createServer((req, res) => {
     await page.screenshot({
       path: path.join(screenshots, "home-desktop.png"),
       fullPage: true,
+      animations: "disabled",
     });
     await page.getByRole("link", { name: "开始交换实验" }).click();
     await page.getByRole("button", { name: "少于 100 B", exact: true }).click();
@@ -1043,6 +1044,175 @@ const server = http.createServer((req, res) => {
     await page.locator("#security-run").click();
     assert.equal(await page.locator("#security-gap").textContent(), "5");
     assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.goto(base + "/learning-path.html?lesson=hash");
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    assert.equal(await page.locator("#learning-stops button").count(), 8);
+    assert.ok(await page.locator("#learning-confirm").isDisabled());
+    const quiz = await page.evaluate(
+      () => LearningLab.lesson("hash").questions,
+    );
+    await page
+      .locator(
+        `input[name="${quiz[0].id}"][value="${(quiz[0].correct + 1) % 3}"]`,
+      )
+      .check();
+    await page.locator("#learning-check").click();
+    assert.match(
+      await page.locator("#learning-feedback").textContent(),
+      /正确 0 \/ 2/,
+    );
+    for (const q of quiz)
+      await page.locator(`input[name="${q.id}"][value="${q.correct}"]`).check();
+    await page.locator("#learning-check").click();
+    assert.ok(await page.locator("#learning-confirm").isDisabled());
+    const note =
+      "重算证明链接自洽；真实PoW仍要校验，等工作不换链；业务事实需要链外证据。";
+    await page.locator("#learning-note").fill(note);
+    await page.locator("#learning-rubric summary").click();
+    assert.ok(await page.locator("#learning-confirm").isEnabled());
+    await page.locator("#learning-confirm").click();
+    assert.equal(await page.locator("#learning-count").textContent(), "1 / 8");
+    await page.locator("#learning-note").fill(note + "补充解释");
+    assert.equal(await page.locator("#learning-count").textContent(), "0 / 8");
+    await page.locator("#learning-confirm").click();
+    await page.reload();
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    assert.equal(
+      await page.locator("#learning-note").inputValue(),
+      note + "补充解释",
+    );
+    assert.equal(await page.locator("#learning-count").textContent(), "1 / 8");
+    const downloadPromise = page.waitForEvent("download");
+    await page.locator("#learning-export").click();
+    const download = await downloadPromise;
+    assert.equal(download.suggestedFilename(), "blockchain-learning-notes.md");
+    const exportPath = path.join(root, ".validation-temp", "learning-notes.md");
+    fs.mkdirSync(path.dirname(exportPath), { recursive: true });
+    await download.saveAs(exportPath);
+    const exported = fs.readFileSync(exportPath, "utf8");
+    assert.ok(exported.includes(note + "补充解释"));
+    assert.match(exported, /不是掌握认证/);
+    await page.screenshot({
+      path: path.join(screenshots, "learning-desktop.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.goto(base + "/learning-path.html");
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    assert.match(page.url(), /lesson=utxo/);
+    await page.locator('[data-lesson="hash"]').click();
+    page.once("dialog", (dialog) => dialog.dismiss());
+    await page.locator("#learning-clear").click();
+    assert.equal(await page.locator("#learning-count").textContent(), "1 / 8");
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.locator("#learning-clear").click();
+    assert.equal(await page.locator("#learning-count").textContent(), "0 / 8");
+    assert.equal(await page.locator("#learning-note").inputValue(), "");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const curriculum = require("../assets/js/curriculum.js");
+    for (const l of curriculum.lessons) {
+      await page.locator(`[data-lesson="${l.id}"]`).click();
+      assert.equal(
+        await page.locator("#learning-title").textContent(),
+        l.title,
+      );
+      assert.equal(
+        await page.locator("#learning-experiment").getAttribute("href"),
+        l.href,
+      );
+      await page.locator("#learning-check").click();
+      await page.locator("#learning-rubric").evaluate((n) => (n.open = true));
+      assert.ok(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+        `learning overflow ${l.id}`,
+      );
+      assert.equal(await page.locator("#learning-rubric-list li").count(), 3);
+      // Each experiment's return link routes to the correct station.
+      const response = await page.request.get(base + "/" + l.href);
+      assert.equal(response.status(), 200);
+      assert.ok(
+        (await response.text()).includes(
+          "../learning-path.html?lesson=" + l.id + "#learning-workbench",
+        ),
+      );
+    }
+    assert.ok(await page.locator("#learning-next").isDisabled());
+    await page.screenshot({
+      path: path.join(screenshots, "learning-mobile.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
+    assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
+    await page.goto(
+      "file:///" +
+        path.join(root, "learning-path.html").replaceAll("\\", "/") +
+        "?lesson=lp",
+    );
+    await page.waitForFunction(() => document.body.dataset.ready === "true");
+    assert.equal(
+      await page.locator("#learning-title").textContent(),
+      curriculum.lesson("lp").title,
+    );
+    const blocked = await browser.newPage();
+    blocked.on("pageerror", (e) => errors.push(e.message));
+    await blocked.addInitScript(() => {
+      Object.defineProperty(window, "localStorage", {
+        get() {
+          throw new DOMException("denied", "SecurityError");
+        },
+      });
+    });
+    await blocked.goto(base + "/learning-path.html?lesson=account");
+    await blocked.waitForFunction(() => document.body.dataset.ready === "true");
+    assert.match(
+      await blocked.locator("#learning-storage").textContent(),
+      /页面内记录/,
+    );
+    await blocked.locator("#learning-note").fill("不能保存仍可以填写解释");
+    assert.equal(
+      await blocked.locator("#learning-note").inputValue(),
+      "不能保存仍可以填写解释",
+    );
+    await blocked.close();
+    const corrupt = await browser.newPage();
+    corrupt.on("pageerror", (e) => errors.push(e.message));
+    await corrupt.addInitScript(() =>
+      localStorage.setItem("blockchain-lab.learning.v1", '{"version":99}'),
+    );
+    await corrupt.goto(base + "/learning-path.html");
+    await corrupt.waitForFunction(() => document.body.dataset.ready === "true");
+    await corrupt.locator("#learning-note").fill("不能静默覆盖旧数据");
+    assert.equal(
+      await corrupt.evaluate(() =>
+        localStorage.getItem("blockchain-lab.learning.v1"),
+      ),
+      '{"version":99}',
+    );
+    assert.match(
+      await corrupt.locator("#learning-storage").textContent(),
+      /原数据保留/,
+    );
+    await corrupt.close();
+    const quota = await browser.newPage();
+    quota.on("pageerror", (e) => errors.push(e.message));
+    await quota.addInitScript(() => {
+      Storage.prototype.setItem = function () {
+        throw new DOMException("full", "QuotaExceededError");
+      };
+    });
+    await quota.goto(base + "/learning-path.html");
+    await quota.waitForFunction(() => document.body.dataset.ready === "true");
+    await quota.locator("#learning-note").fill("保存失败不丢掉页面内解释");
+    assert.match(
+      await quota.locator("#learning-storage").textContent(),
+      /保存不可用/,
+    );
+    await quota.close();
     assert.deepEqual(errors, []);
     const networkDelayed = await browser.newPage();
     let releaseNetwork;
@@ -1108,7 +1278,7 @@ const server = http.createServer((req, res) => {
     );
     await delayed.close();
     console.log(
-      "Browser QA passed: exchange, LP, lending, chain, signatures, forks, accounts and reentrancy; desktop/mobile, file URLs, reduced motion, no overflow or page errors.",
+      "Browser QA passed: eight experiments and learning workbook; self-review, persistence failures, export, desktop/mobile, file URLs, reduced motion, no overflow or page errors.",
     );
   } finally {
     if (browser) await browser.close();

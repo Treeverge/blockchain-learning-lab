@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="区块链八站学习路径：先实验，再回答情景题、写出账本解释，用源码挑战验证理解。"
+    />
+    <title>学习路径与自检 · 区块链学习实验室</title>
+    <link rel="stylesheet" href="assets/css/lab.css" />
+    <script defer src="assets/js/curriculum.js"></script>
+    <script defer src="assets/js/learning-path.js"></script>
+  </head>
+  <body data-ready="false">
+    <header class="site-header">
+      <a class="brand" href="index.html"
+        ><span class="brand-mark" aria-hidden="true">▤</span>区块链学习实验室</a
+      ><span class="header-meta">THE LEARNING WORKBOOK</span>
+    </header>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">从实验到解释 · 八个学习站点</p>
+          <h1>做完之后，<br />把规则讲清楚<span class="blue">。</span></h1>
+          <p class="hero-copy">
+            情景题检验判断，账本解释检验推理。<br />再添加一个源码测试，验证你的结论。
+          </p>
+        </div>
+        <aside class="hero-note">
+          <span class="note-index">你的学习记录</span>
+          <p><span id="learning-count">0 / 8</span><br />站已完成自检</p>
+          <div class="note-bottom">
+            <span>按需跳转 · 不强制解锁</span
+            ><span>自检记录，不是掌握认证</span>
+          </div>
+        </aside>
+      </section>
+      <div class="learning-toolbar">
+        <p id="learning-storage" class="caption" role="status">
+          正在读取当前浏览器的学习记录。
+        </p>
+        <button id="learning-export" class="secondary" disabled>
+          导出学习记录 ↓
+        </button>
+      </div>
+      <noscript
+        ><p class="feedback">
+          请启用JavaScript，或阅读
+          <a href="docs/learning-guide.md">学习与验收说明</a>。
+        </p></noscript
+      >
+      <div id="learning-workbench" class="learning-layout">
+        <nav aria-label="推荐学习顺序">
+          <ol id="learning-stops" class="learning-stops">
+            <li>正在加载八站路径。</li>
+          </ol>
+          <p class="config-hint learning-order-note">
+            为了先理解交易再看分叉，推荐Day 3签名在Day
+            2节点之前。原源码章节编号保留。
+          </p>
+        </nav>
+        <section class="learning-main" aria-labelledby="learning-title">
+          <p id="learning-chapter" class="eyebrow">第一站</p>
+          <h2 id="learning-title" tabindex="-1">从哈希与有效历史开始。</h2>
+          <p id="learning-description" class="caption">
+            先运行实验，再独立判断两个情景。
+          </p>
+          <div class="learning-experiment">
+            <a
+              id="learning-experiment"
+              class="learning-experiment-link"
+              href="03-演示文稿/chain-lab.html"
+              >打开本站实验 →</a
+            ><span id="learning-time" class="caption"></span>
+          </div>
+          <form id="learning-quiz">
+            <h3>01 · 判断两个情景</h3>
+            <div id="learning-questions"></div>
+            <button
+              id="learning-check"
+              class="secondary"
+              type="submit"
+              disabled
+            >
+              检查我的选择 →
+            </button>
+            <p id="learning-feedback" class="feedback" role="status">
+              选择题会给出规则解释，不会自动确认你已掌握。
+            </p>
+          </form>
+          <section class="learning-explanation">
+            <h3>02 · 用自己的话解释</h3>
+            <label
+              id="learning-prompt"
+              for="learning-note"
+              class="field-label"
+            ></label
+            ><textarea
+              id="learning-note"
+              rows="6"
+              maxlength="6000"
+              placeholder="写出状态如何改变、为什么改变，以及结论的边界。"
+              disabled
+            ></textarea>
+            <p class="config-hint">
+              解释由你自行核对，不做关键词或AI评分。修改选择或解释会撤销本站的自检标记。
+            </p>
+            <details id="learning-rubric">
+              <summary>展开三条自检标准</summary>
+              <ul id="learning-rubric-list"></ul>
+            </details>
+            <button id="learning-confirm" class="primary lp-action" disabled>
+              我已对照标准核对解释，确认自检 →
+            </button>
+            <p id="learning-completion" class="feedback" role="status">
+              先答对两题并写出解释，再对照标准确认。
+            </p>
+          </section>
+          <section class="learning-challenge">
+            <p class="eyebrow">03 · 深入源码</p>
+            <h3>补一个失败样例或边界测试</h3>
+            <p id="learning-challenge-task"></p>
+            <p id="learning-challenge-expected" class="config-hint"></p>
+            <div class="learning-source-links">
+              <a id="learning-source" href="assets/js/chain.js">读模型 →</a
+              ><a id="learning-test" href="tests/chain.test.cjs">看已有测试 →</a
+              ><a href="docs/learning-guide.md">本地练习方法 →</a>
+            </div>
+            <p class="config-hint">
+              在源码副本或新测试中练习，保留原有测试。网页不执行或判定你的代码挑战。
+            </p>
+          </section>
+          <div class="learning-station-actions">
+            <button id="learning-clear" class="text-button" disabled>
+              清除本站记录</button
+            ><button id="learning-next" class="secondary" disabled>
+              下一站 →
+            </button>
+          </div>
+        </section>
+      </div>
+      <section class="under-hood">
+        <details>
+          <summary>记录保存在哪里，进度表示什么？</summary>
+          <div class="details-content">
+            <p>
+              选择与解释保存在当前浏览器的本地存储，不上传，不需要账号。文件双击、公开网站和不同浏览器不保证共享记录；导出Markdown可保存笔记，当前不支持导入。
+            </p>
+            <p>
+              自检需要两题正确、解释非空，并由你明确确认。它记录一次自我核对，不是考试证书，也不证明掌握真实协议。源码挑战需要独立运行环境，完成与否由你检查测试结果。
+            </p>
+            <p>
+              存储不可用时可以继续学习，但记录只留在本次页面内。旧记录损坏或版本不同会保留原数据并提示，不会静默覆盖。
+            </p>
+          </div>
+        </details>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <span>区块链：从技术到信任</span
+      ><span>能预测，能解释，能用失败样例验证。</span>
+    </footer>
+  </body>
+</html>

@@ -5,7 +5,7 @@
 ## 计算与借贷账本
 
 ```powershell
-node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs tests/network.test.cjs tests/account.test.cjs
+node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs tests/network.test.cjs tests/account.test.cjs tests/security.test.cjs tests/curriculum.test.cjs
 python -X utf8 -m unittest discover -s tests -p "test_*.py"
 ```
 
@@ -95,3 +95,11 @@ Node.js 24 下 Ganache 的原生 µWS 扩展可能不可用，工具会退回 Ja
 - 全套浏览器检查通过，新增四阶段、逐帧控制、攻击后Alice偿付失败、两种防护、失败传播、主动拒收、7次边界、非法输入不执行、直接文件打开、减少动态效果、390px及展开说明无溢出。桌面和手机截图已视觉检查，结果区复用现有账本组件。
 - 独立复核补充3456组参数边界：现金、初始锁、调用者、模式、次数、捕获与拒收。模型资金和回滚正确；指出切换配置后旧结果未标明来源的展示问题，已保存并展示实际运行配置、提示旧结果归属并加浏览器回归，复核通过。
 - 网页/Python是有界教学执行器，不模拟EVM、Gas、nonce或真实资产。锁只覆盖本示例withdraw，未宣称完整合约安全审计；真实VM费用与网页业务资金分开。依据链接见Day6 README。
+
+## 学习路径与自检验证（2026-10-14）
+
+- 新增10项内容与进度测试，完整JavaScript共73项、Python14项通过。八站依赖顺序、16道题的格式、实验 / 模型 / 测试链接、确认门槛、修改撤销、单站清除、读取校验与Markdown导出均检查。无费交换、LP下跌扩展、借贷还款和7 G安全挑战另与可执行模型核对。
+- 自检只在两道情景题正确、解释非空且用户明确点击时确认；解释没有自动质量评分。读取JSON不能直接信任reviewed字段，缺少条件时撤销假标记。原代码挑战结果没有被网页当作已验证。
+- 浏览器检查答错反馈、答对但无解释不能确认、解释修改撤销、刷新保持、继续首个未自检站、导出真实Markdown、单站清除取消与确认、八站实验回程链接、未知记录版本不覆盖、读存储被拒绝与写容量失败时页面内继续。
+- 桌面与390px八站（含长题目、展开标准）无溢出，文件直接打开与减少动态效果通过，无页面错误；截图已视觉检查。首页截图固定在入场动画结束状态，避免把过渡帧当成最终配色。
+- 独立复核未发现Critical / Important / Minor；额外用DOM桩检查8组存储 / 确认 / 修改边界。笔记只保存在当前浏览器源下，导出无上传，版本损坏保留原记录；暂未提供导入或跨标签页合并，说明文档明确限制。

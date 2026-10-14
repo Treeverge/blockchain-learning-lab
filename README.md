@@ -11,6 +11,7 @@
 ## 从哪里开始
 
 - 双击根目录 `index.html`，进入学习首页。
+- 打开 `learning-path.html`，按八站推荐顺序学习：每站两道情景题、书面解释标准和一个源码挑战。答案与笔记保存在当前浏览器，可导出 Markdown。
 - 基础路径：打开 `03-演示文稿/chain-lab.html`，体验哈希、篡改、修复、挖矿和选链。
 - 接着打开 `03-演示文稿/utxo-lab.html`，验证真实签名、找零、越权与重复花费。
 - 再打开 `03-演示文稿/network-lab.html`，传播冲突交易、制造分叉、选链并重放 UTXO。
@@ -25,6 +26,8 @@
 公开体验地址：[区块链学习实验室](https://treeverge.github.io/blockchain-learning-lab/)。
 
 ## 新版 DeFi 实验
+
+学习深度与练习方法见 [学习与验收说明](docs/learning-guide.md)。选择题核对与解释自检分开；自检标记不代表掌握认证，也不代表源码挑战已自动运行。
 
 | 步骤   | 操作                   | 解释的问题                         |
 | ------ | ---------------------- | ---------------------------------- |
@@ -77,7 +80,7 @@ python -X utf8 -m unittest discover -s tests -p "test_*.py"
 JavaScript 模型测试不需要安装依赖（Node.js 18 或更高版本）：
 
 ```powershell
-node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs tests/network.test.cjs tests/account.test.cjs tests/security.test.cjs
+node --test tests/amm.test.cjs tests/lp.test.cjs tests/lending.test.cjs tests/chain.test.cjs tests/utxo.test.cjs tests/network.test.cjs tests/account.test.cjs tests/security.test.cjs tests/curriculum.test.cjs
 ```
 
 Solidity 操作步骤与单位见 [Day 5 README](04-六天实战源码/day5-defi/README.md)。浏览器与 Solidity 的开发验证方法见 [验证说明](docs/verification.md)。
@@ -86,6 +89,7 @@ Solidity 操作步骤与单位见 [Day 5 README](04-六天实战源码/day5-defi
 
 ```text
 index.html                  学习首页
+learning-path.html          八站情景题、解释与源码挑战工作台
 assets/css/lab.css          新版网页样式
 assets/js/amm.js            可独立测试的整数交换模型
 assets/js/exchange.js       教学步骤与交互
@@ -103,6 +107,8 @@ assets/js/account.js        原生账户、Token 存储、nonce 与执行回滚�
 assets/js/account-lab.js    账户、费用、临时计算与授权代转网页交互
 assets/js/security.js       有界重入、实际资金与分层回滚模型
 assets/js/security-lab.js   防护对照、失败传播与逐帧轨迹网页交互
+assets/js/curriculum.js     八站内容、答案核对、自检规则与记录导出
+assets/js/learning-path.js  路线、笔记、本地保存与自检页面交互
 03-演示文稿/                新版交换实验与原有演示
 04-六天实战源码/            六个章节的本地实验
 tests/                      计算、资金守恒、浏览器、合约验证
