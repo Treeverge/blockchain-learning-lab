@@ -1,0 +1,221 @@
+/* Compatibility layer: original diagrams, current site tokens and controls. */
+:root {
+  --color-bg: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface2: #edf0eb;
+  --color-surface3: #e3e8e2;
+  --color-text: var(--ink);
+  --color-text-dim: var(--muted);
+  --color-text-muted: var(--muted);
+  --color-accent: var(--blue);
+  --color-accent-dim: var(--blue);
+  --color-accent-glow: rgba(36, 88, 223, 0.12);
+  --color-accent-soft: var(--blue-light);
+  --color-warm: var(--orange);
+  --color-danger: #b5392f;
+  --color-success: var(--green);
+  --color-info: var(--blue);
+  --color-verify: var(--blue);
+  --border-subtle: var(--line);
+  --border-card: var(--line);
+  --font-body: var(--sans);
+  --font-display: var(--sans);
+  --font-mono: var(--mono);
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+}
+body.legacy-demo {
+  font: 15px/1.7 var(--sans);
+}
+.legacy-demo #top-nav {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  padding: 16px 32px;
+  min-height: 65px;
+  justify-content: space-between;
+  gap: 12px;
+}
+.legacy-demo #top-nav a {
+  color: var(--ink);
+  font: bold 15px var(--sans);
+}
+.legacy-demo #top-nav .legacy-back {
+  color: var(--blue);
+  font-weight: 400;
+}
+.legacy-demo #top-nav .brand-mark {
+  font-size: 26px;
+  color: var(--blue);
+}
+.legacy-demo #main {
+  scroll-snap-type: y proximity;
+}
+.legacy-demo .section {
+  padding: 105px 60px 60px;
+  min-height: auto;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line);
+}
+.legacy-demo h2 {
+  color: var(--ink);
+  font-size: clamp(25px, 3vw, 36px);
+}
+.legacy-demo .section-label {
+  font: 11px var(--mono);
+  color: var(--blue);
+  margin-bottom: 14px;
+}
+.legacy-demo .step-desc {
+  margin-top: 18px;
+}
+.legacy-demo .btn {
+  background: var(--blue);
+  color: white;
+  border-radius: 4px;
+  min-height: 44px;
+  box-shadow: none;
+}
+.legacy-demo .btn:hover {
+  background: #1944b6;
+  box-shadow: none;
+  transform: none;
+}
+.legacy-demo .btn.outline {
+  background: var(--surface);
+  color: var(--blue);
+  border: 1px solid var(--line);
+}
+.legacy-demo .btn.danger,
+.legacy-demo .tamper-btn {
+  background: #b5392f;
+  color: white;
+}
+.legacy-demo input {
+  accent-color: var(--blue);
+}
+.legacy-demo input:focus-visible,
+.legacy-demo button:focus-visible,
+.legacy-demo a:focus-visible {
+  outline: 3px solid #e89629;
+  outline-offset: 4px;
+}
+.legacy-demo .vprimary {
+  color: white;
+}
+.legacy-demo .legacy-note {
+  border-left: 3px solid var(--orange);
+  background: #fff4e9;
+  color: var(--ink);
+  padding: 16px 20px;
+  margin: 0 0 30px;
+  font-size: 14px;
+}
+.legacy-demo .legacy-note p {
+  margin: 6px 0;
+}
+.legacy-demo .legacy-note a {
+  color: var(--blue);
+}
+.legacy-demo .reveal-up:not(.visible),
+.legacy-demo .reveal-stagger > :not(.visible) {
+  opacity: 1;
+}
+.legacy-demo .qr-scan-wrap,
+.legacy-demo .id-qr {
+  background: white;
+}
+.legacy-demo .id-qr > div {
+  background: var(--ink);
+}
+.legacy-demo .id-qr > .w {
+  background: white;
+}
+.legacy-demo .compare-table {
+  min-width: 560px;
+}
+.legacy-demo .compare-table-wrap {
+  overflow-x: auto;
+}
+.legacy-demo #progress-bar {
+  right: 16px;
+}
+.legacy-demo #progress-bar .pb-label {
+  background: var(--paper);
+  padding: 3px 6px;
+}
+@media (max-width: 700px) {
+  .legacy-demo #top-nav {
+    padding: 15px 20px;
+    flex-wrap: wrap;
+  }
+  .legacy-demo #top-nav a {
+    font-size: 13px;
+  }
+  .legacy-demo #top-nav > span {
+    display: none;
+  }
+  .legacy-demo .section {
+    padding: 100px 22px 45px;
+  }
+  .legacy-demo .legacy-note {
+    padding: 14px;
+    font-size: 13px;
+  }
+  .legacy-demo .section-inner {
+    min-width: 0;
+  }
+  .legacy-demo .input-line,
+  .legacy-demo .tamper-edit {
+    flex-wrap: wrap;
+  }
+  .legacy-demo .input-line input,
+  .legacy-demo .tamper-edit input {
+    min-width: 0;
+    width: 100%;
+  }
+  .legacy-demo .keys {
+    grid-template-columns: 1fr;
+  }
+  .legacy-demo .formula,
+  .legacy-demo .kval {
+    overflow-wrap: anywhere;
+  }
+  .legacy-demo .generals-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .legacy-demo .general {
+    min-width: 85px;
+    flex: 1 1 85px;
+  }
+  .legacy-demo .phases-grid,
+  .legacy-demo .phase-explain,
+  .legacy-demo .phase-cards {
+    grid-template-columns: 1fr;
+  }
+  .legacy-demo .timeline {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .legacy-demo .id-card {
+    flex-wrap: wrap;
+  }
+  .legacy-demo .value-cards {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .legacy-demo *,
+  .legacy-demo *::before,
+  .legacy-demo *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .legacy-demo .reveal-up,
+  .legacy-demo .reveal-stagger > * {
+    opacity: 1;
+    transform: none;
+  }
+}

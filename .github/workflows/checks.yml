@@ -27,6 +27,8 @@ jobs:
       - run: node --check assets/js/account-lab.js
       - run: node --check assets/js/security-lab.js
       - run: node --check assets/js/learning-path.js
+      - run: node --check assets/js/presentation.js
+      - run: python scripts/build-manuscript.py --check
       - run: npm install --prefix "$RUNNER_TEMP/account-validation" --no-audit --no-fund solc@0.8.20 ethers@6.13.4 ganache@7.9.2
       - run: node tests/account-solidity-check.cjs
         env:

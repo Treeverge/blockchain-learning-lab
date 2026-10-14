@@ -23,6 +23,7 @@ npm.cmd install --prefix $qaTools --no-audit --no-fund playwright solc@0.8.20 et
 $env:NODE_PATH = Join-Path $qaTools 'node_modules'
 npx.cmd --prefix $qaTools playwright install chromium
 node tests/browser-check.cjs
+node tests/presentation-check.cjs
 node tests/solidity-check.cjs
 node tests/account-solidity-check.cjs
 ```
@@ -30,6 +31,10 @@ node tests/account-solidity-check.cjs
 如已安装 Chrome，可设置 `$env:CHROME_PATH` 为 Chrome 可执行文件的绝对路径，浏览器测试将使用它而不下载 Chromium。`CHROME_PATH` 只供开发脚本使用，网页不需要。
 
 浏览器脚本会创建并关闭临时 HTTP 服务和独立浏览器，检查桌面与 390px 窄屏下的六步流程、交易、错误状态、手续费切换、抢先交易、解释题和横向溢出。也检查 `file://` 直接打开能正确报价。截图保存到 `docs/screenshots`。
+
+`presentation-check.cjs` 另检查全站 15 个 HTML 的共享颜色、字体样式入口、桌面 / 手机布局、本地链接及资源；验证投影片按钮、目录、左右键、历史回退、焦点保护、打印、无脚本和直接文件打开。旧三演示保留的生成密钥、签名、投票、修改 / 恢复和预设扫码交互也作换肤回归检查。截图保存到同一目录，临时打印文件写入自动创建且忽略的 `.validation-temp`。
+
+分享讲稿以 Markdown 为内容源。`python -X utf8 scripts/build-manuscript.py --check` 检查提交的网页和 Word 是否仍与源文件一致；生成脚本只用标准库。Word 链接采用公开 Pages 地址，文件不含宏。
 
 ## Solidity
 
@@ -103,3 +108,11 @@ Node.js 24 下 Ganache 的原生 µWS 扩展可能不可用，工具会退回 Ja
 - 浏览器检查答错反馈、答对但无解释不能确认、解释修改撤销、刷新保持、继续首个未自检站、导出真实Markdown、单站清除取消与确认、八站实验回程链接、未知记录版本不覆盖、读存储被拒绝与写容量失败时页面内继续。
 - 桌面与390px八站（含长题目、展开标准）无溢出，文件直接打开与减少动态效果通过，无页面错误；截图已视觉检查。首页截图固定在入场动画结束状态，避免把过渡帧当成最终配色。
 - 独立复核未发现Critical / Important / Minor；额外用DOM桩检查8组存储 / 确认 / 修改边界。笔记只保存在当前浏览器源下，导出无上传，版本损坏保留原记录；暂未提供导入或跨标签页合并，说明文档明确限制。
+
+## 全站风格与分享校订验证（2026-10-14）
+
+- 全站15个HTML加载同一lab.css，纸白背景、深色正文、蓝色操作与本地字体统一。主演示、讲稿和旧三演示不再请求Google字体；旧演示新增模型边界和新版入口。DESIGN.md作为后续视觉依据。
+- 73项JavaScript模型与14项Python测试通过；完整八实验 / 工作台浏览器回归通过。独立的分享QA检查15页1440px / 390px、本地链接及锚点、共享颜色、局部容器溢出、资源无外部依赖、投影片导航 / 历史 / 焦点、减少动态效果、文件直接打开、无脚本阅读。旧生成密钥、签名、投票、选择目标后修改 / 恢复、预设扫码操作通过。
+- 主演示14个S编号与讲稿对应。浏览器打印输出14页A4，目录与控制不打印；桌面和手机截图已视觉检查。讲稿网页与Word由标准库脚本生成，--check通过；Word五个XML部件可解析、14节齐全、超链接关系完整且不含宏。没有在桌面Microsoft Word中另行检查分页。
+- 独立复核发现S11先确认再演示首次双花确认的步骤错误，已明确重置、重建与签名，重新生成HTML / Word并复核通过。其余默认账本、AMM / LP / 借贷数值与模型一致。
+- 历史图解没有升级成真实PBFT、现代RSA或扫码验证实现；其结果文字已标注示意范围，删除无出处TPS / 能耗对比。主演示改用真实签名、PoW重组与可对账交换；TradeLens只引用2022-11-29原始停止公告和当时计划，区分历史事实与项目分析。

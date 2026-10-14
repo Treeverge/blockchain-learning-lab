@@ -1,1004 +1,611 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>区块链：从技术到信任</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-/* ====== RESET & BASE ====== */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{font-size:16px}
-body{
-  font-family:var(--font-body);
-  background:var(--color-bg);
-  color:var(--color-text);
-  overflow-x:hidden;
-  line-height:1.75;
-}
-
-:root{
-  /* ===== 底色系统：蓝天鹅绒 ===== */
-  --color-bg:        oklch(26% 0.10 252);
-  --color-surface:   oklch(31% 0.09 252);
-  --color-surface2:  oklch(35% 0.08 252);
-  --color-surface3:  oklch(39% 0.07 252);
-
-  /* ===== 文字系统：香槟金 ===== */
-  --color-text:      oklch(86% 0.10 85);
-  --color-text-dim:  oklch(68% 0.07 82);
-  --color-text-muted:oklch(52% 0.04 78);
-
-  /* ===== 强调色：亮金 ===== */
-  --color-accent:    oklch(82% 0.16 86);
-  --color-accent-dim:oklch(70% 0.12 84);
-  --color-accent-glow:oklch(82% 0.16 86 / .6);
-  --color-accent-soft:oklch(82% 0.16 86 / .28);
-
-  /* ===== 辅助色 ===== */
-  --color-warm:      oklch(76% 0.14 65);
-  --color-danger:    oklch(60% 0.15 22);
-  --color-success:   oklch(66% 0.12 155);
-  --color-verify:    oklch(68% 0.12 195);
-
-  /* ===== 边框色 ===== */
-  --border-subtle:   oklch(38% 0.06 250);
-  --border-card:     oklch(33% 0.05 248);
-
-  /* ===== 字体 ===== */
-  --font-display:'Sora',system-ui,sans-serif;
-  --font-mono:'JetBrains Mono','Courier New',monospace;
-  --font-body:'PingFang SC','Microsoft YaHei','Hiragino Sans GB',sans-serif;
-
-  /* ===== 间距 ===== */
-  --space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:24px;
-  --space-xl:32px;--space-2xl:48px;--space-3xl:64px;--space-4xl:96px;
-
-  /* ===== 缓动 ===== */
-  --ease-out:cubic-bezier(0.25,1,0.5,1);
-  --ease-smooth:cubic-bezier(0.22,1,0.36,1);
-  --ease-spring:cubic-bezier(0.34,1.3,0.64,1);
-
-  /* ===== 圆角 ===== */
-  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;
-}
-
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important}}
-
-/* ====== CANVAS ====== */
-#particle-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
-
-/* ====== SCROLL CONTAINER ====== */
-#main{position:relative;z-index:1;scroll-snap-type:y mandatory;overflow-y:auto;height:100dvh;scroll-behavior:smooth}
-
-/* ====== SECTION BASE ====== */
-.section{min-height:100dvh;scroll-snap-align:start;display:flex;align-items:center;justify-content:center;padding:var(--space-3xl) var(--space-2xl);position:relative}
-/* content-heavy sections breathe more */
-#s4,#s5,#s6,#s9{min-height:100dvh;padding-top:var(--space-4xl);padding-bottom:var(--space-4xl)}
-.section-inner{max-width:1100px;width:100%;margin:0 auto}
-
-/* ====== PROGRESS BAR (vertical line index) ====== */
-#progress-bar{position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;align-items:center;gap:0}
-#progress-bar .pb-track{width:1px;background:oklch(90% 0.005 85 / .12);border-radius:1px;transition:height .4s var(--ease-out)}
-#progress-bar .pb-segments{display:flex;flex-direction:column;gap:0;position:absolute;inset:0}
-#progress-bar .pb-seg{flex:1;cursor:pointer;position:relative;background:transparent;border:none;outline:none;transition:background .35s var(--ease-out)}
-#progress-bar .pb-seg.active{background:var(--color-accent);box-shadow:0 0 10px var(--color-accent-glow)}
-#progress-bar .pb-seg:hover{background:var(--color-accent-soft)}
-#progress-bar .pb-label{position:absolute;right:18px;top:50%;transform:translateY(-50%);white-space:nowrap;font-family:var(--font-display);font-size:.68rem;font-weight:600;color:var(--color-accent);opacity:0;transition:opacity .3s var(--ease-out);pointer-events:none}
-#progress-bar .pb-seg.active .pb-label{opacity:1}
-
-/* ====== REVEAL ANIMATIONS ====== */
-.reveal-up,.reveal-left,.reveal-right,.reveal-scale,.reveal-blur,.reveal-stagger>*{opacity:0}
-.reveal-up.visible{animation:rev-up .7s var(--ease-out) forwards}
-.reveal-left.visible{animation:rev-left .7s var(--ease-out) forwards}
-.reveal-right.visible{animation:rev-right .7s var(--ease-out) forwards}
-.reveal-scale.visible{animation:rev-scale .65s var(--ease-smooth) forwards}
-.reveal-blur.visible{animation:rev-blur 1s var(--ease-smooth) .2s forwards}
-.reveal-stagger.visible>:nth-child(1){animation:rev-up .55s var(--ease-out) .04s forwards}
-.reveal-stagger.visible>:nth-child(2){animation:rev-up .55s var(--ease-out) .10s forwards}
-.reveal-stagger.visible>:nth-child(3){animation:rev-up .55s var(--ease-out) .16s forwards}
-.reveal-stagger.visible>:nth-child(4){animation:rev-up .55s var(--ease-out) .22s forwards}
-.reveal-stagger.visible>:nth-child(5){animation:rev-up .55s var(--ease-out) .28s forwards}
-.reveal-stagger.visible>:nth-child(6){animation:rev-up .55s var(--ease-out) .34s forwards}
-.reveal-stagger.visible>:nth-child(7){animation:rev-up .55s var(--ease-out) .40s forwards}
-.reveal-stagger.visible>:nth-child(8){animation:rev-up .55s var(--ease-out) .46s forwards}
-@keyframes rev-up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-@keyframes rev-left{from{opacity:0;transform:translateX(-32px)}to{opacity:1;transform:translateX(0)}}
-@keyframes rev-right{from{opacity:0;transform:translateX(32px)}to{opacity:1;transform:translateX(0)}}
-@keyframes rev-scale{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
-@keyframes rev-blur{from{opacity:0;transform:scale(.9);filter:blur(8px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
-
-/* ====== TYPOGRAPHY ====== */
-h1{font-family:var(--font-display);font-weight:700;letter-spacing:-0.02em;line-height:1.12}
-h2{font-family:var(--font-display);font-weight:600;font-size:clamp(2rem,3.2vw,2.8rem);letter-spacing:-0.015em;margin-bottom:var(--space-lg);color:var(--color-text)}
-h3{font-family:var(--font-display);font-weight:600;font-size:1.1rem;color:var(--color-accent)}
-.section-label{font-family:var(--font-display);font-weight:600;font-size:.78rem;color:var(--color-accent-dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:var(--space-sm)}
-.dim{color:var(--color-text-dim)}
-.mono{font-family:var(--font-mono);font-size:.82rem}
-
-/* ====== CARDS (dark theme) ====== */
-.card{
-  background:var(--color-surface);
-  border-radius:var(--radius-lg);
-  padding:var(--space-lg);
-  border:1px solid var(--border-card);
-  color:var(--color-text);
-  transition:transform .35s var(--ease-out),border-color .35s var(--ease-out),box-shadow .35s var(--ease-out);
-}
-.card:hover{
-  transform:translateY(-4px);
-  border-color:var(--color-accent);
-  box-shadow:0 0 32px oklch(82% 0.16 86 / .15),inset 0 0 0 1px oklch(82% 0.16 86 / .06);
-}
-.card h3{color:var(--color-accent);margin-bottom:var(--space-xs)}
-.card p,.card .dim{color:var(--color-text-dim)}
-
-/* ====== BUTTONS ====== */
-.btn{display:inline-flex;align-items:center;gap:var(--space-sm);padding:13px 26px;border-radius:var(--radius-md);font-family:var(--font-display);font-weight:600;font-size:.9rem;text-decoration:none;cursor:pointer;transition:transform .2s var(--ease-out),box-shadow .2s var(--ease-out),background .2s var(--ease-out);border:none}
-.btn-primary{background:var(--color-accent);color:oklch(24% 0.08 252)}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 36px var(--color-accent-glow)}
-.btn-outline{border:1.5px solid var(--color-accent);color:var(--color-accent);background:transparent}
-.btn-outline:hover{background:oklch(82% 0.16 86 / .08);transform:translateY(-2px)}
-
-/* ====== SECTION 1 - HERO ====== */
-#s1{text-align:center}
-#s1 .hero-ripple{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:0;height:0;border-radius:50%;border:1px solid var(--color-accent-soft);opacity:0;pointer-events:none;animation:ripple-out 2.2s var(--ease-smooth) .8s forwards}
-@keyframes ripple-out{0%{width:0;height:0;opacity:.6}100%{width:800px;height:800px;opacity:0}}
-#s1 .hero-title-wrap{position:relative}
-#s1 .hero-title{font-size:clamp(3.2rem,6vw,6.5rem);animation:hero-in 1s var(--ease-smooth) .15s both}
-@keyframes hero-in{from{opacity:0;transform:scale(.86);filter:blur(10px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
-#s1 .hero-title .glow{position:absolute;inset:-30px -50px;background:radial-gradient(ellipse at center,oklch(82% 0.16 86 / .22),transparent 70%);border-radius:50%;opacity:0;animation:glow-pulse 2s var(--ease-out) .6s forwards;pointer-events:none}
-@keyframes glow-pulse{from{opacity:0}to{opacity:1}}
-#s1 .hero-sub{font-size:clamp(1.05rem,1.6vw,1.25rem);color:var(--color-text-dim);margin-top:var(--space-lg);opacity:0;animation:rev-up .7s var(--ease-out) .6s forwards}
-#s1 .hero-meta{font-size:.85rem;color:var(--color-text-dim);margin-top:var(--space-2xl);opacity:0;animation:rev-up .7s var(--ease-out) .8s forwards}
-.arrow-hint{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0;animation:rev-up .6s var(--ease-out) 1.2s forwards}
-.arrow-hint .av-line{width:1px;height:28px;background:var(--color-accent-soft);position:relative;overflow:hidden}
-.arrow-hint .av-line::after{content:'';position:absolute;top:-4px;left:-2px;width:5px;height:5px;border-radius:50%;background:var(--color-accent);animation:dot-flow 1.6s ease-in-out infinite}
-@keyframes dot-flow{0%{top:-4px;opacity:0}30%{opacity:1}70%{opacity:1}100%{top:28px;opacity:0}}
-
-/* ====== SECTION 2 - DEFINITION ====== */
-#s2{text-align:center}
-#s2 .big-def{font-family:var(--font-display);font-size:clamp(2rem,3.2vw,2.8rem);font-weight:600;line-height:1.5;max-width:22em;margin:0 auto var(--space-2xl)}
-.char-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-lg);margin:var(--space-2xl) 0}
-.char-card{background:var(--color-surface);border-radius:var(--radius-lg);padding:var(--space-xl) var(--space-md);text-align:center;border:1px solid var(--border-card);color:var(--color-text);transition:transform .35s var(--ease-out),border-color .35s var(--ease-out),box-shadow .35s var(--ease-out)}
-.char-card:hover{transform:translateY(-4px);border-color:var(--color-accent);box-shadow:0 0 28px oklch(82% 0.16 86 / .12)}
-.char-card .cc-icon{font-size:2.4rem;margin-bottom:var(--space-sm)}
-.char-card .cc-title{font-family:var(--font-display);font-weight:600;font-size:1.05rem;color:var(--color-accent);margin-bottom:var(--space-xs)}
-.char-card .cc-desc{font-size:.9rem;color:var(--color-text-dim);line-height:1.55}
-.how-it-works{display:flex;align-items:center;justify-content:center;gap:var(--space-sm);flex-wrap:wrap;margin-top:var(--space-xl);font-size:.84rem;color:var(--color-text-dim)}
-.how-it-works .hw-step{padding:8px 14px;background:var(--color-surface2);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);white-space:nowrap;font-family:var(--font-body);font-size:.84rem;font-weight:500;color:var(--color-text)}
-.how-it-works .hw-arrow{color:var(--color-accent);font-size:.9rem;margin:0 2px}
-.how-it-works-label{width:100%;text-align:center;font-family:var(--font-display);font-weight:600;font-size:.84rem;color:var(--color-accent);margin-bottom:var(--space-sm)}
-
-/* ====== SECTION 3 - ANALOGY ====== */
-#s3 .split{display:flex;gap:var(--space-3xl);align-items:flex-start}
-#s3 .split-l{flex:1}
-#s3 .split-r{flex:1;display:flex;flex-direction:column;gap:var(--space-md)}
-#s3 .analogy{font-size:1.15rem;line-height:1.9;color:var(--color-text-dim);margin-top:var(--space-md);max-width:42ch}
-#s3 .tagline{font-family:var(--font-display);font-weight:600;font-size:1.1rem;color:var(--color-accent);margin-top:var(--space-xl);text-align:center}
-
-/* ====== SECTION 4 - TIMELINE ====== */
-.timeline{display:flex;align-items:flex-start;justify-content:space-between;position:relative;padding-top:38px;margin:var(--space-xl) 0}
-.timeline::before{content:'';position:absolute;top:16px;left:8%;right:8%;height:1.5px;background:var(--color-accent-dim)}
-.timeline .tnode{text-align:center;width:140px;position:relative;z-index:2}
-.timeline .tnode::before{content:'';display:block;width:12px;height:12px;border-radius:50%;background:var(--color-accent);margin:0 auto 10px;transition:transform .3s var(--ease-out),box-shadow .3s var(--ease-out)}
-.timeline .tnode:hover::before{transform:scale(1.8);box-shadow:0 0 18px var(--color-accent-glow)}
-.timeline .tyear{font-family:var(--font-display);font-weight:700;font-size:1.05rem;color:var(--color-accent)}
-.timeline .tdesc{font-size:.8rem;color:var(--color-text-dim);margin-top:2px;line-height:1.4}
-.compare-cards{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);margin-top:var(--space-xl)}
-.compare-cards .card{text-align:center;padding:var(--space-xl)}
-.compare-cards .card img{max-width:60px;height:auto;margin-bottom:var(--space-md);border-radius:50%}
-.compare-cards .card p{color:var(--color-text-dim);font-size:.92rem;line-height:1.7;margin-top:var(--space-sm)}
-.btc-quote{text-align:center;font-family:var(--font-display);font-weight:600;font-size:1.1rem;color:var(--color-warm);margin-top:var(--space-xl)}
-
-/* ====== SECTION 5 - SCENE GRID ====== */
-.scene-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:var(--space-lg)}
-.scene-card{padding:var(--space-xl);text-align:center;border-top:3px solid var(--border-card);transition:border-color .35s var(--ease-out),transform .35s var(--ease-out),box-shadow .35s var(--ease-out)}
-.scene-card:hover{border-top-color:var(--color-accent)}
-.scene-card .sicon{font-size:2.6rem;margin-bottom:var(--space-sm)}
-.scene-card h3{margin-bottom:var(--space-xs);color:var(--color-text)}
-.scene-card p{color:var(--color-text-dim);font-size:.88rem;line-height:1.6}
-
-/* ====== SECTION 6 - OIL STATION ====== */
-.oil-header{text-align:center;margin-bottom:var(--space-2xl)}
-.oil-header .oil-scene{font-size:3rem;margin-bottom:var(--space-sm)}
-.oil-header .oil-sub{color:var(--color-text-dim);font-size:.92rem}
-.oil-phases{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--space-md)}
-.oil-phase{background:var(--color-surface);border-radius:var(--radius-lg);padding:var(--space-lg) var(--space-sm);text-align:center;border:1px solid var(--border-card);transition:transform .3s var(--ease-out),border-color .3s var(--ease-out);color:var(--color-text)}
-.oil-phase:hover{transform:translateY(-4px);border-color:var(--color-accent);box-shadow:0 0 24px oklch(82% 0.16 86 / .1)}
-.oil-phase .op-num{font-family:var(--font-mono);font-size:.7rem;color:var(--color-accent-dim);margin-bottom:var(--space-xs)}
-.oil-phase .op-icon{font-size:2rem;margin-bottom:var(--space-sm)}
-.oil-phase .op-title{font-family:var(--font-display);font-weight:600;font-size:.85rem;color:var(--color-accent);margin-bottom:var(--space-xs)}
-.oil-phase .op-data{font-size:.78rem;color:var(--color-text-dim);line-height:1.5}
-.oil-phase .op-value{font-size:.74rem;color:var(--color-warm);margin-top:var(--space-sm);line-height:1.4}
-.oil-bottom{text-align:center;margin-top:var(--space-2xl);font-size:.9rem;color:var(--color-text-dim)}
-
-/* ====== DEMO ENTRY COMMON (S11/S12) ====== */
-.demo-entry{display:flex;gap:var(--space-3xl);align-items:flex-start}
-.demo-entry .demo-left{flex:1.1}
-.demo-entry .demo-right{flex:.9;display:flex;flex-direction:column;align-items:center}
-.demo-desc{color:var(--color-text-dim);font-size:.95rem;line-height:1.8;margin-bottom:var(--space-md)}
-.flow-mini{display:flex;align-items:center;gap:var(--space-sm);margin:var(--space-lg) 0}
-.flow-mini .fm-node{padding:7px 12px;background:var(--color-surface2);border-radius:var(--radius-sm);font-size:.8rem;font-family:var(--font-display);font-weight:600;white-space:nowrap;color:var(--color-text)}
-.flow-mini .fm-arrow{color:var(--color-accent);font-size:1rem}
-.chain-preview{display:flex;align-items:center;gap:6px;margin:var(--space-lg) 0}
-.chain-preview .cblock{width:84px;padding:var(--space-sm);background:var(--color-surface2);border-radius:var(--radius-sm);border:1px solid var(--color-accent);text-align:center}
-.chain-preview .cblock .ci{font-family:var(--font-display);font-weight:700;font-size:.7rem;color:var(--color-accent)}
-.chain-preview .cblock .ch{font-family:var(--font-mono);font-size:.6rem;color:var(--color-text-dim)}
-.chain-preview .clink{width:18px;height:2px;background:var(--color-accent);position:relative;flex-shrink:0}
-.chain-preview .clink::after{content:'';position:absolute;width:5px;height:5px;border-radius:50%;background:var(--color-accent);top:-1.5px;animation:flow-dot 1.4s linear infinite}
-@keyframes flow-dot{0%{left:0;opacity:0}30%{opacity:1}70%{opacity:1}100%{left:13px;opacity:0}}
-.trace-dots{display:flex;align-items:center;gap:0;margin:var(--space-lg) 0}
-.trace-dots .tdot{width:14px;height:14px;border-radius:50%;border:2px solid var(--color-accent);background:var(--color-bg)}
-.trace-dots .tdot.filled{background:var(--color-accent)}
-.trace-dots .tline{width:36px;height:2px;background:var(--color-accent)}
-
-/* ====== QR CARD ====== */
-.qr-card{background:var(--color-surface2);border-radius:var(--radius-lg);padding:var(--space-lg);display:flex;gap:var(--space-lg);align-items:center;max-width:420px;position:relative;border:1px solid var(--border-card)}
-.qr-grid{display:grid;grid-template-columns:repeat(11,1fr);gap:2px;width:90px;height:90px;flex-shrink:0}
-.qr-grid div{background:var(--color-text);border-radius:1px}
-.qr-grid div.w{background:transparent}
-.qr-scan-line{position:absolute;left:var(--space-lg);width:90px;height:2px;background:var(--color-success);opacity:0;pointer-events:none;box-shadow:0 0 8px var(--color-success);z-index:5;top:calc(var(--space-lg) + 0px)}
-@keyframes qr-scan{0%{top:var(--space-lg);opacity:.8}50%{opacity:1}100%{top:calc(var(--space-lg) + 86px);opacity:.3}}
-.qr-result{display:none;text-align:center;margin-top:var(--space-md);padding:var(--space-md);background:oklch(66% 0.12 155 / .08);border:1px solid oklch(66% 0.12 155 / .25);border-radius:var(--radius-md)}
-.qr-result.show{display:block;animation:rev-up .5s var(--ease-out) forwards}
-.qr-result .qr-ok{color:var(--color-success);font-weight:700;font-size:.95rem}
-.qr-result .qr-detail{color:var(--color-text-dim);font-size:.8rem;margin-top:4px}
-
-/* ====== SECTION 7 - SMART CONTRACT ====== */
-.vending-machine{width:170px;height:240px;background:var(--color-surface2);border-radius:var(--radius-md);border:2px solid var(--color-accent);margin:0 auto var(--space-md);padding:10px;display:flex;flex-direction:column;align-items:center;gap:5px}
-.vending-machine .coin-slot{width:36px;height:7px;background:var(--color-accent);border-radius:3px}
-.vending-machine .shelf{width:100%;display:flex;justify-content:space-around;gap:3px;flex:1}
-.vending-machine .item{width:28px;height:20px;background:oklch(82% 0.16 86 / .14);border:1px solid oklch(82% 0.16 86 / .28);border-radius:3px}
-.vending-machine .dispenser{width:46px;height:18px;background:var(--color-surface);border-radius:3px;border:1px solid var(--border-subtle)}
-.vm-label{text-align:center;font-size:.8rem;color:var(--color-text-dim)}
-.contract-cards{display:flex;flex-direction:column;gap:var(--space-md);margin-top:var(--space-md)}
-.contract-card{padding:var(--space-md);background:var(--color-surface);border-radius:var(--radius-md);border:1px solid var(--border-card);font-size:.9rem;line-height:1.6;color:var(--color-text)}
-.contract-card .arrow{color:var(--color-accent);font-weight:700}
-
-/* ====== SECTION 9 - DRAWBACKS ====== */
-.split2{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3xl)}
-.split2 .left-col h2{margin-bottom:var(--space-md)}
-.split2 .left-col .lead{color:var(--color-text-dim);font-size:.98rem;line-height:1.8;max-width:38ch}
-.issue-list{list-style:none;display:flex;flex-direction:column;gap:var(--space-sm);counter-reset:issue}
-.issue-list li{counter-increment:issue;padding:var(--space-md) var(--space-md) var(--space-md) 48px;background:var(--color-surface);border-radius:var(--radius-md);position:relative;transition:background .3s,border-color .3s;font-size:.9rem;line-height:1.6;color:var(--color-text);border:1px solid var(--border-card)}
-.issue-list li::before{content:counter(issue);position:absolute;left:16px;top:14px;font-family:var(--font-display);font-weight:700;font-size:1.05rem;color:var(--color-accent)}
-.issue-list li:hover{background:var(--color-surface2);border-color:var(--border-subtle)}
-.issue-list li strong{color:var(--color-text)}
-.caution-box{background:oklch(60% 0.15 22 / .06);border:1px solid oklch(60% 0.15 22 / .2);border-radius:var(--radius-md);padding:var(--space-lg);text-align:center;margin-top:var(--space-xl);font-family:var(--font-display);font-weight:600;font-size:.92rem;color:var(--color-warm)}
-
-/* ====== SECTION 10 - DECISION TREE ====== */
-.tree{display:flex;flex-direction:column;align-items:center;gap:0;width:100%;max-width:700px;margin:var(--space-xl) auto}
-.tree .tq{background:var(--color-surface);border:1px solid var(--border-card);border-radius:var(--radius-md);padding:var(--space-md) var(--space-xl);font-family:var(--font-display);font-weight:600;font-size:.92rem;text-align:center;min-width:260px;color:var(--color-text);transition:all .3s var(--ease-out)}
-.tree .tq.hl{border-color:var(--color-accent);background:oklch(82% 0.16 86 / .06);color:var(--color-accent);box-shadow:0 0 28px oklch(82% 0.16 86 / .12)}
-.tree .tq.dim{border-color:oklch(24% 0.004 70);color:var(--color-text-muted);opacity:.55}
-.tree .tr{display:flex;gap:var(--space-3xl);align-items:flex-start;justify-content:center;position:relative;margin-top:2px}
-.tree .tr .branch{display:flex;flex-direction:column;align-items:center;gap:0}
-.tree .tr .b-label{font-size:.72rem;color:var(--color-text-dim);margin-bottom:2px;font-family:var(--font-display)}
-.tree .tr .b-label.accent{color:var(--color-accent)}
-.tree .conn{width:2px;height:20px;background:var(--border-subtle)}
-.tree .conn.accent{background:var(--color-accent-dim)}
-.tree .res{background:var(--color-surface);border:1px solid var(--border-card);border-radius:var(--radius-sm);padding:10px 18px;font-family:var(--font-display);font-weight:600;font-size:.8rem;text-align:center;min-width:140px;color:var(--color-text)}
-.tree .res.dim{opacity:.5}
-.tree .res.hl{border-color:var(--color-accent);background:oklch(82% 0.16 86 / .06);color:var(--color-accent);box-shadow:0 0 28px oklch(82% 0.16 86 / .12);font-size:.9rem;padding:14px 22px}
-.tree-gap{height:6px}
-.tree-horiz{display:flex;gap:var(--space-2xl);align-items:flex-start;justify-content:center;margin-top:2px}
-
-/* ====== SECTION 13 - SUMMARY ====== */
-.summary-table{width:100%;border-collapse:collapse;margin:var(--space-xl) 0}
-.summary-table th{font-family:var(--font-display);font-weight:600;font-size:.84rem;color:var(--color-accent);padding:var(--space-sm) var(--space-md);text-align:left;border-bottom:1.5px solid var(--color-accent)}
-.summary-table td{padding:var(--space-sm) var(--space-md);font-size:.86rem;border-bottom:1px solid var(--border-subtle);color:var(--color-text-dim);vertical-align:top}
-.summary-table tr:last-child td{border-bottom:none}
-.summary-table td:first-child{font-family:var(--font-display);font-weight:600;color:var(--color-text)}
-
-/* ====== SECTION 14 - ENDING ====== */
-#s14 .ending-title{font-family:var(--font-display);font-weight:700;font-size:clamp(2.8rem,5.5vw,5rem);letter-spacing:-0.02em;line-height:1.3;opacity:0;transform:scale(.85);filter:blur(12px)}
-#s14 .ending-title.visible{animation:ending-reveal 1.2s var(--ease-smooth) .3s forwards}
-@keyframes ending-reveal{0%{opacity:0;transform:scale(.85);filter:blur(12px)}60%{opacity:1;transform:scale(1.02);filter:blur(0)}100%{opacity:1;transform:scale(1);filter:blur(0)}}
-#s14 .ending-sub{font-size:1.05rem;color:var(--color-text-dim);opacity:0}
-#s14 .ending-sub.visible{animation:rev-up .7s var(--ease-out) .9s forwards}
-#s14 .ending-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:0;height:0;border-radius:50%;pointer-events:none;background:radial-gradient(circle,oklch(82% 0.16 86 / .12),transparent 60%);opacity:0}
-#s14 .ending-glow.visible{animation:ending-glow-pulse 2.5s var(--ease-smooth) .4s forwards}
-@keyframes ending-glow-pulse{0%{width:0;height:0;opacity:0}50%{width:900px;height:900px;opacity:1}100%{width:1200px;height:1200px;opacity:0}}
-
-/* ====== MINI-BLOCK (S12 tamper demo) ====== */
-.mini-block{background:var(--color-surface);color:var(--color-text)}
-
-/* ====== S12 MINI VOTE DEMO ====== */
-.mini-vote-node{
-  width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:1.3rem;background:var(--color-surface);border:2px solid var(--color-success);
-  transition:border-color .35s var(--ease-out),background .35s,box-shadow .35s,transform .3s var(--ease-out);
-}
-.mini-vote-node.traitor{
-  border-color:var(--color-danger);background:oklch(60% 0.15 22 / .08);
-  box-shadow:0 0 14px oklch(60% 0.15 22 / .3);transform:rotate(-6deg);
-}
-#mini-traitor-slider{-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;background:var(--color-surface3);outline:none}
-#mini-traitor-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--color-accent);cursor:pointer;box-shadow:0 0 8px var(--color-accent-glow)}
-
-/* ====== RESPONSIVE ====== */
-@media(max-width:768px){
-  .section{padding:var(--space-xl) var(--space-lg)}
-  #s3 .split,.demo-entry{flex-direction:column}
-  .split2{grid-template-columns:1fr}
-  .compare-cards{grid-template-columns:1fr}
-  .char-grid{grid-template-columns:repeat(2,1fr)}
-  .oil-phases{grid-template-columns:1fr}
-  .timeline{flex-wrap:wrap;gap:var(--space-md);justify-content:center}
-  .timeline::before{display:none}
-  .case-grid{grid-template-columns:1fr}
-  #progress-bar{right:8px}
-  #progress-bar .pb-label{display:none}
-  .how-it-works{gap:4px}
-  .how-it-works .hw-step{font-size:.68rem;padding:6px 10px}
-}
-</style>
-</head>
-<body>
-
-<canvas id="particle-canvas" aria-hidden="true"></canvas>
-<nav id="progress-bar" aria-label="演示进度"></nav>
-
-<main id="main">
-
-<!-- ====== S1: COVER ====== -->
-<section class="section" id="s1">
-  <div class="hero-ripple" aria-hidden="true"></div>
-  <div class="section-inner">
-    <div class="hero-title-wrap">
-      <div class="glow" aria-hidden="true"></div>
-      <h1 class="hero-title">区块链技术分享</h1>
-    </div>
-    <p class="hero-sub">多方协作中，如何不用"相信"也能"确认"？</p>
-  </div>
-  <div class="arrow-hint"><div class="av-line"></div></div>
-</section>
-
-<!-- ====== S2: DEFINITION ====== -->
-<section class="section" id="s2">
-  <div class="section-inner">
-    <div class="reveal-up"><p class="section-label">定义</p></div>
-    <p class="big-def reveal-blur">区块链是一种<strong style="color:var(--color-accent);font-weight:700">去中心化</strong>的分布式数据库技术</p>
-    <div class="char-grid reveal-stagger">
-      <div class="char-card"><div class="cc-icon">🏛</div><div class="cc-title">去中心化</div><div class="cc-desc">没有中心服务器，数据分布在网络中的每一台计算机上，人人平等</div></div>
-      <div class="char-card"><div class="cc-icon">🔒</div><div class="cc-title">不可篡改</div><div class="cc-desc">数据一旦写入就无法修改或删除，改一条等于改全网所有副本</div></div>
-      <div class="char-card"><div class="cc-icon">🔍</div><div class="cc-title">公开透明与可追溯</div><div class="cc-desc">每一笔记录都公开可查，从起点到终点全程追溯，没有暗箱</div></div>
-      <div class="char-card"><div class="cc-icon">👥</div><div class="cc-title">集体维护</div><div class="cc-desc">所有人共同参与数据的验证和存储，没有"管理员"，系统靠算法运行</div></div>
-    </div>
-    <div class="reveal-up">
-      <div class="how-it-works-label">工作原理</div>
-      <div class="how-it-works">
-        <span class="hw-step">数据</span><span class="hw-arrow">→</span>
-        <span class="hw-step">分成区块</span><span class="hw-arrow">→</span>
-        <span class="hw-step">密码学链接</span><span class="hw-arrow">→</span>
-        <span class="hw-step">广播全网</span><span class="hw-arrow">→</span>
-        <span class="hw-step">节点验证</span><span class="hw-arrow">→</span>
-        <span class="hw-step">写入链中</span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>从记录到规则 · 区块链学习实验室</title>
+    <meta
+      name="description"
+      content="40分钟技术分享：区分哈希、签名、共识和经济风险，通过三个实验解释区块链的原理与边界。"
+    />
+    <link rel="stylesheet" href="../assets/css/lab.css" />
+    <link rel="stylesheet" href="../assets/css/presentation.css" />
+    <script src="../assets/js/presentation.js" defer></script>
+  </head>
+  <body class="presentation">
+    <header class="site-header">
+      <a class="brand" href="../index.html"
+        ><span class="brand-mark">▦</span>区块链学习实验室</a
+      >
+      <div class="header-meta">
+        <a href="../02-演讲稿/演讲稿（对外版）.html">配套讲稿</a
+        ><button id="deck-print" class="text-button" disabled>
+          打印 / PDF
+        </button>
       </div>
-      <p class="dim" style="text-align:center;margin-top:var(--space-md);font-size:.84rem">数据被分成一个个"区块"，每个区块通过密码学哈希链接到前一个区块，所有参与者共同验证和存储，形成一条不可篡改的链。</p>
-    </div>
-  </div>
-</section>
-
-<!-- ====== S3: ANALOGY ====== -->
-<section class="section" id="s3">
-  <div class="section-inner">
-    <div class="reveal-up"><p class="section-label">一句话讲清楚</p></div>
-    <div class="split">
-      <div class="split-l reveal-left">
-        <p class="analogy">三个人——你、我、他——共同记一本账。每一笔进出都同时写在我们三个人的本子上。谁也别想偷偷改自己的本子，因为另外两个人的对不上。</p>
-      </div>
-      <div class="split-r reveal-stagger">
-        <div class="card"><h3>📋 公共账本</h3><p class="dim" style="margin-top:4px;font-size:.9rem">每个人手里都有一份完整副本，没有"总账"和"分账"的区别</p></div>
-        <div class="card"><h3>🔒 不可篡改</h3><p class="dim" style="margin-top:4px;font-size:.9rem">改一本等于改所有本子，还要同时改——成本高到不划算</p></div>
-        <div class="card"><h3>🤝 没有中间人</h3><p class="dim" style="margin-top:4px;font-size:.9rem">不需要银行或公证处来担保，数学算法就是担保</p></div>
-      </div>
-    </div>
-    <p class="tagline reveal-up">区块链的本质——让一群互不信任的人，共同维护一份无法篡改的记录。</p>
-  </div>
-</section>
-
-<!-- ====== S4: BLOCKCHAIN ≠ BITCOIN ====== -->
-<section class="section" id="s4">
-  <div class="section-inner">
-    <div class="reveal-up"><p class="section-label">纠正一个常见误区</p></div>
-    <h2 class="reveal-up">区块链 ≠ 比特币</h2>
-    <div class="timeline reveal-stagger">
-      <div class="tnode"><div class="tyear">1991</div><div class="tdesc">Haber &amp; Stornetta<br>提出密码学时间戳<br>学术基础</div></div>
-      <div class="tnode"><div class="tyear">2008</div><div class="tdesc">中本聪发布<br>比特币白皮书<br>第一个应用</div></div>
-      <div class="tnode"><div class="tyear">2015</div><div class="tdesc">以太坊上线<br>引入智能合约<br>可编程区块链</div></div>
-      <div class="tnode"><div class="tyear">2020+</div><div class="tdesc">企业区块链、DeFi<br>NFT、供应链溯源<br>百花齐放</div></div>
-    </div>
-    <div class="compare-cards reveal-stagger">
-      <div class="card">
-        <img src="picture/bitcoin.jpeg" alt="Bitcoin">
-        <h3>比特币</h3>
-        <p>数字货币的一种实现。就像电子邮件是互联网的第一个应用，比特币是区块链的第一个应用。</p>
-      </div>
-      <div class="card">
-        <h3>🔗 区块链</h3>
-        <p>底层技术。一套"分布式账本"的技术体系，像发动机——可以装在汽车、飞机、轮船上，驱动各种不同的场景。</p>
-      </div>
-    </div>
-    <p class="btc-quote reveal-up">"比特币是区块链的第一款 App，不是区块链本身。"</p>
-  </div>
-</section>
-
-<!-- ====== S5: APPLICATION SCENES ====== -->
-<section class="section" id="s5">
-  <div class="section-inner">
-    <div class="reveal-up"><p class="section-label">应用场景</p></div>
-    <h2 class="reveal-up">区块链能用来做什么？</h2>
-    <div class="scene-grid reveal-stagger">
-      <div class="card scene-card"><div class="sicon">💰</div><h3>金融</h3><p>跨境转账从 3 天变 3 秒。摩根大通 JPM Coin、数字人民币、去中心化金融（DeFi）</p></div>
-      <div class="card scene-card"><div class="sicon">📦</div><h3>供应链</h3><p>从原料到消费者，扫码看全程。沃尔玛食品追溯、马士基海运提单数字化</p></div>
-      <div class="card scene-card"><div class="sicon">🏗️</div><h3>工程建造</h3><p>每根钢筋谁生产、谁检验，永久可查。BIM 模型 + 区块链材料认证</p></div>
-      <div class="card scene-card"><div class="sicon">🏥</div><h3>医疗健康</h3><p>病历跟着患者走，不再每家医院重填。电子健康档案跨院安全共享</p></div>
-      <div class="card scene-card"><div class="sicon">🏛️</div><h3>数字政务</h3><p>房产证不可伪造，不用跑腿盖章。爱沙尼亚数字身份、中国区块链电子发票</p></div>
-      <div class="card scene-card"><div class="sicon">🎨</div><h3>艺术版权</h3><p>数字作品有了"真迹"认证。创作者每次转售都能自动获得版税分成</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- ====== S6: OIL STATION DEEP DIVE ====== -->
-<section class="section" id="s6">
-  <div class="section-inner">
-    <div class="reveal-up"><p class="section-label">深度聚焦 · 工程建造</p></div>
-    <div class="oil-header reveal-up">
-      <div class="oil-scene">🏗️⛽🛢️</div>
-      <h2>一座沙漠采油站的区块链档案</h2>
-      <p class="oil-sub">从第一张勘测图纸到竣工验收，每一个关键步骤的数据都被区块链锁定，不可篡改、永久可查。</p>
-    </div>
-    <div class="oil-phases reveal-stagger">
-      <div class="oil-phase">
-        <div class="op-num">阶段 1</div>
-        <div class="op-icon">🔬</div>
-        <div class="op-title">地质勘探</div>
-        <div class="op-data">勘测报告 · 地质数据 · 储量评估</div>
-        <div class="op-value">↳ 投资方与施工方基于同一份不可篡改的数据决策，杜绝数据造假</div>
-      </div>
-      <div class="oil-phase">
-        <div class="op-num">阶段 2</div>
-        <div class="op-icon">⚙️</div>
-        <div class="op-title">设备采购</div>
-        <div class="op-data">抽油机 · 泵阀 · 管道出厂报告 · 材质证书</div>
-        <div class="op-value">↳ 每台设备有数字身份证，杜绝"以次充好"，供应商签名不可抵赖</div>
-      </div>
-      <div class="oil-phase">
-        <div class="op-num">阶段 3</div>
-        <div class="op-icon">🔥</div>
-        <div class="op-title">管道焊接</div>
-        <div class="op-data">焊工编号 · 焊接参数 · X光探伤报告</div>
-        <div class="op-value">↳ 日后管道泄漏，秒级追溯到具体焊口和焊工，责任链条完整</div>
-      </div>
-      <div class="oil-phase">
-        <div class="op-num">阶段 4</div>
-        <div class="op-icon">📊</div>
-        <div class="op-title">压力测试</div>
-        <div class="op-data">试压数据 · 监理签名 · 时间戳</div>
-        <div class="op-value">↳ 试压报告不可篡改，监管方远程即可验证，无需到现场翻纸质报告</div>
-      </div>
-      <div class="oil-phase">
-        <div class="op-num">阶段 5</div>
-        <div class="op-icon">✅</div>
-        <div class="op-title">安全验收</div>
-        <div class="op-data">消防 · 防爆 · 逃生系统 · 多方签名</div>
-        <div class="op-value">↳ 施工方、开发商、安监部门三方共信，数据永久存档，30年后仍可查</div>
-      </div>
-    </div>
-    <p class="oil-bottom reveal-up">这座采油站的每一根管道、每一台设备都有<span style="color:var(--color-accent)">"数字出生证明"</span>。十年后出了问题，不需要翻找尘封的档案柜——<span style="color:var(--color-accent)">扫一个码，全链路可见</span>。</p>
-  </div>
-</section>
-
-<!-- ====== S7: SMART CONTRACTS ====== -->
-<section class="section" id="s7">
-  <div class="section-inner">
-    <div class="reveal-up"><p class="section-label">进阶概念</p></div>
-    <h2 class="reveal-up">智能合约</h2>
-
-    <div style="display:flex;gap:var(--space-2xl);align-items:flex-start;margin-top:var(--space-lg)">
-      <div style="flex:1.3" class="reveal-left">
-        <div style="margin-bottom:var(--space-xl)">
-          <p style="font-size:1.05rem;line-height:1.8;color:var(--color-text-dim)">
-            智能合约是一段<strong style="color:var(--color-text)">部署在区块链上的程序代码</strong>。当预设条件被满足时，它会<strong style="color:var(--color-text)">自动执行</strong>约定的操作。没有人能中途阻止或修改它——代码即规则。
-          </p>
+    </header>
+    <main class="deck" id="main">
+      <section class="slide" id="s1" data-title="从记录到规则">
+        <p class="eyebrow">01 / 14 · 40 MIN · THREE LIVE EXPERIMENTS</p>
+        <h1>从记录到规则。<br /><span class="blue">把区块链讲清楚。</span></h1>
+        <p class="deck-lead">
+          一份记录是否一致，谁有权花钱，网络选择哪段历史，代码又会怎样失败？用账本和实验，逐层回答。
+        </p>
+        <div class="deck-flow">
+          <b>内容一致性</b><span>→</span><b>交易授权</b><span>→</span
+          ><b>共同历史</b><span>→</span><b>资金与风险</b>
         </div>
-
-        <p style="font-family:var(--font-display);font-weight:600;font-size:.92rem;color:var(--color-accent);margin-bottom:var(--space-md)">就像编程里的 if-else 语句</p>
-
-        <div style="background:var(--color-surface2);border-radius:var(--radius-md);padding:var(--space-lg);border:1px solid var(--border-subtle);font-family:var(--font-mono);font-size:.82rem;line-height:1.9;color:var(--color-text-dim)">
-          <span style="color:var(--color-accent)">if</span> (货物GPS == "上海港仓库") {<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--color-success)">自动支付尾款</span>();<br>
-          }<br><br>
-          <span style="color:var(--color-accent)">if</span> (冷链温度 > 4°C) {<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--color-danger)">自动拒收</span>();<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--color-warm)">触发保险理赔</span>();<br>
-          }
-        </div>
-
-        <div style="display:flex;gap:var(--space-xl);margin-top:var(--space-xl)">
-          <div style="flex:1;padding:var(--space-md);background:var(--color-surface);border-radius:var(--radius-md);border:1px solid var(--border-card)">
-            <p style="font-size:.78rem;color:var(--color-text-dim);margin-bottom:4px">传统合同</p>
-            <p style="font-size:.88rem;color:var(--color-text)">靠人执行<br>可能拖延、赖账<br>需要律师和法院</p>
-          </div>
-          <div style="font-size:1.4rem;color:var(--color-accent);display:flex;align-items:center">→</div>
-          <div style="flex:1;padding:var(--space-md);background:oklch(82% 0.16 86 / .06);border-radius:var(--radius-md);border:1px solid oklch(82% 0.16 86 / .2)">
-            <p style="font-size:.78rem;color:var(--color-accent);margin-bottom:4px">智能合约</p>
-            <p style="font-size:.88rem;color:var(--color-text)">靠代码执行<br>条件满足立刻触发<br>不等人签字审批</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="reveal-right" style="flex:.7;text-align:center">
-        <div class="vending-machine" style="margin-top:0">
-          <div class="coin-slot"></div>
-          <div class="shelf"><div class="item"></div><div class="item"></div><div class="item"></div></div>
-          <div class="shelf"><div class="item"></div><div class="item"></div><div class="item"></div></div>
-          <div class="shelf"><div class="item"></div><div class="item"></div><div class="item"></div></div>
-          <div class="dispenser"></div>
-        </div>
-        <p class="vm-label" style="margin-top:var(--space-sm)">自动售货机：投币 → 选货 → 出货<br>规则写死在机器里，没人能耍赖</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ====== S8: REAL CASES ====== -->
-<section class="section" id="s8">
-  <div class="section-inner">
-    <div class="reveal-up"><p class="section-label">落地案例</p></div>
-    <h2 class="reveal-up" style="text-align:center">这些企业也正在使用</h2>
-    <div class="case-grid reveal-stagger" style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-lg)">
-      <div class="card case-card" style="text-align:center;padding:var(--space-xl)">
-        <img src="picture/walmart logo.jpeg" alt="Walmart" style="max-width:100px;height:auto;margin-bottom:var(--space-md)">
-        <h3 style="font-size:.95rem">沃尔玛食品追溯</h3>
-        <p class="dim" style="font-size:.84rem;line-height:1.6">从农场到货架，追溯时间从<br><strong style="color:var(--color-accent)">7 天 → 2.2 秒</strong><br>一片芒果的来源，扫码就知道</p>
-      </div>
-      <div class="card case-card" style="text-align:center;padding:var(--space-xl)">
-        <img src="picture/maersk.logo.jpeg" alt="Maersk" style="max-width:100px;height:auto;margin-bottom:var(--space-md)">
-        <h3 style="font-size:.95rem">马士基 TradeLens</h3>
-        <p class="dim" style="font-size:.84rem;line-height:1.6">海运提单数字化<br><strong style="color:var(--color-accent)">每年节省数十亿美元</strong><br>全球 100+ 港口已接入</p>
-      </div>
-      <div class="card case-card" style="text-align:center;padding:var(--space-xl)">
-        <img src="picture/debeers logo.jpeg" alt="De Beers" style="max-width:100px;height:auto;margin-bottom:var(--space-md)">
-        <h3 style="font-size:.95rem">戴比尔斯 Tracr</h3>
-        <p class="dim" style="font-size:.84rem;line-height:1.6">每一颗钻石都有<strong style="color:var(--color-accent)">数字护照</strong><br>从矿山到戒指全透明<br>杜绝血钻，消费者放心</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ====== S9: DRAWBACKS ====== -->
-<section class="section" id="s9">
-  <div class="section-inner">
-    <div class="reveal-up"><p class="section-label">诚实面对</p></div>
-    <div class="split2">
-      <div class="left-col reveal-left">
-        <h2>区块链技术的弊端</h2>
-        <p class="lead">这些是真实存在的问题，了解它们才能真正用好区块链。每一项技术都有代价——关键是这个代价换来了什么。</p>
-      </div>
-      <div class="right-col reveal-stagger">
-        <ol class="issue-list">
-          <li><strong>能耗问题</strong><br>比特币年耗电 ≈ 阿根廷全国用电。PoW 挖矿极其耗能——但 PoS 等新机制正在改变这一点。</li>
-          <li><strong>性能瓶颈</strong><br>比特币 7 TPS vs Visa 24,000 TPS。适合贵重资产的确权，不适合每秒万笔的零售支付。</li>
-          <li><strong>不可逆性</strong><br>丢了私钥 = 钱永远没了。没有"找回密码"按钮，没有客服可以申诉。</li>
-          <li><strong>监管灰色地带</strong><br>各国态度不一，合规成本高，法律框架仍在追赶技术的发展。</li>
-          <li><strong>51% 攻击</strong><br>如果某人控制了超过一半的算力，理论上可以篡改历史记录——虽然对大型公链来说成本极高。</li>
-          <li><strong>不要为了区块链而区块链</strong><br>如果你们之间本来就互相信任，传统数据库更快、更便宜、更简单。</li>
-        </ol>
-      </div>
-    </div>
-    <div class="caution-box reveal-up">区块链不是万能药——它专门解决「多方互不信任」场景下的数据一致性问题。</div>
-  </div>
-</section>
-
-<!-- ====== S10: DECISION TREE ====== -->
-<section class="section" id="s10">
-  <div class="section-inner" style="text-align:center">
-    <div class="reveal-up"><p class="section-label">决策框架</p></div>
-    <h2 class="reveal-up">你需要区块链吗？</h2>
-    <div class="tree reveal-scale">
-      <div class="tq hl">多方需要共享数据吗？</div>
-      <div class="tree-horiz">
-        <div class="branch"><span class="b-label dim">否</span><div class="conn" style="height:16px"></div><div class="res dim">传统数据库就够了</div></div>
-        <div class="branch"><span class="b-label accent">是</span><div class="conn accent" style="height:16px"></div><div class="tq hl">各方互相信任吗？</div></div>
-      </div>
-      <div class="tree-gap"></div>
-      <div class="tree-horiz">
-        <div class="branch"><span class="b-label dim">是</span><div class="conn" style="height:16px"></div><div class="tq dim">已有可信第三方吗？</div></div>
-        <div class="branch"><span class="b-label accent">否</span><div class="conn accent" style="height:16px"></div><div class="tq hl">数据需要永久保留？</div></div>
-      </div>
-      <div class="tree-gap"></div>
-      <div class="tree-horiz" style="gap:var(--space-4xl)">
-        <div class="branch"><span class="b-label dim">否</span><div class="conn" style="height:16px"></div><div class="res dim">传统数据库够了</div></div>
-        <div class="branch"><span class="b-label accent">是</span><div class="conn accent" style="height:16px"></div><div class="res hl">✅ 区块链可能适合你</div></div>
-      </div>
-    </div>
-    <p class="dim reveal-up" style="margin-top:var(--space-xl);font-size:.88rem">如果你的场景偏离了高亮路径，传统数据库更快、更便宜、更简单。</p>
-  </div>
-</section>
-
-<!-- ====== S11: DEMO 1 ENTRY ====== -->
-<section class="section" id="s11">
-  <div class="section-inner">
-    <div class="reveal-up"><p class="section-label">动手体验</p></div>
-    <div class="demo-entry">
-      <div class="demo-left reveal-left">
-        <h2>数字签名：供应链的不可抵赖</h2>
-        <p class="demo-desc">私钥 = 你的亲笔签名，绝不可泄露。<br>公钥 = 你的签名样板，别人用它验证是不是你签的。<br>每个环节经手人都对数据签名，事后无法否认。</p>
-        <div class="flow-mini">
-          <span class="fm-node">生成密钥</span><span class="fm-arrow">→</span>
-          <span class="fm-node">签名上链</span><span class="fm-arrow">→</span>
-          <span class="fm-node">分布式验证</span><span class="fm-arrow">→</span>
-          <span class="fm-node">篡改检测</span>
-        </div>
-      </div>
-      <div class="demo-right reveal-right">
-        <div class="card" style="width:100%;padding:var(--space-lg)">
-          <p class="mono dim">数据：DN800钢管 200吨 炉批号 LOT-2024-0715</p>
-          <p class="mono dim" style="margin-top:8px">签名：私钥 d 签名 -> 1542</p>
-          <p style="color:var(--color-success);margin-top:8px;font-weight:600">✅ 4 节点独立验证通过</p>
-        </div>
-        <p class="dim" style="margin-top:var(--space-md);font-size:.82rem">在 Demo 中亲手生成密钥、构建签名链、检测篡改</p>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:var(--space-xl)" class="reveal-up">
-      <a href="demo-signature.html" class="btn btn-primary">打开 Demo 1：数字签名 →</a>
-    </div>
-  </div>
-</section>
-
-<!-- ====== S12: DEMO 2 ENTRY + MINI DEMO ====== -->
-<section class="section" id="s12">
-  <div class="section-inner">
-    <div class="reveal-up"><p class="section-label">动手体验</p></div>
-    <div class="demo-entry">
-      <div class="demo-left reveal-left">
-        <h2>共识机制：谁说了算？</h2>
-        <p class="demo-desc">没有中心权威，多个已知节点如何对一笔交易达成一致？PBFT 用三阶段投票保证：<strong style="color:var(--color-accent)">只要叛徒少于 1/3，系统就安全</strong>。<br>页岩气项目里的 5 个参与方，正是这样的协作场景。</p>
-        <div class="flow-mini">
-          <span class="fm-node">拜占庭将军</span><span class="fm-arrow">→</span>
-          <span class="fm-node">三阶段投票</span><span class="fm-arrow">→</span>
-          <span class="fm-node">作恶被拒</span><span class="fm-arrow">→</span>
-          <span class="fm-node">共识对比</span>
-        </div>
-      </div>
-      <div class="demo-right reveal-right" id="mini-vote-demo">
-        <p style="font-family:var(--font-display);font-weight:600;font-size:.9rem;color:var(--color-accent);margin-bottom:var(--space-md)">👇 试试增加叛徒</p>
-        <div style="display:flex;gap:8px;margin-bottom:var(--space-md);flex-wrap:wrap;justify-content:center">
-          <div class="mini-vote-node" data-i="0">🏭</div>
-          <div class="mini-vote-node" data-i="1">🔧</div>
-          <div class="mini-vote-node" data-i="2">🚛</div>
-          <div class="mini-vote-node" data-i="3">🏗️</div>
-          <div class="mini-vote-node" data-i="4">🏛️</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:var(--space-md)">
-          <span style="font-size:.72rem;color:var(--color-text-dim)">叛徒</span>
-          <input type="range" id="mini-traitor-slider" min="0" max="3" value="0" style="width:120px">
-          <span id="mini-traitor-count" style="font-family:var(--font-mono);font-size:.78rem;color:var(--color-accent);min-width:14px">0</span>
-        </div>
-        <p id="mini-vote-verdict" style="font-family:var(--font-display);font-weight:600;font-size:.78rem;padding:8px 14px;border-radius:8px;border:1px solid oklch(66% 0.12 155 / .3);background:oklch(66% 0.12 155 / .08);color:var(--color-success);text-align:center">✅ 系统安全 · 共识达成</p>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:var(--space-xl)" class="reveal-up">
-      <a href="demo-chain.html" class="btn btn-primary">打开 Demo 2：共识机制 →</a>
-    </div>
-  </div>
-</section>
-
-<!-- ====== S13: DEMO 3 ENTRY ====== -->
-<section class="section" id="s13">
-  <div class="section-inner">
-    <div class="reveal-up"><p class="section-label">动手体验</p></div>
-    <div class="demo-entry">
-      <div class="demo-left reveal-left">
-        <h2>从种子到杯子：一杯咖啡的区块链之旅</h2>
-        <p class="demo-desc">消费者扫一个二维码，就能看到这包咖啡豆从云南种植园到货架的全部记录——时间、地点、温度、谁经手。每一项都被区块链锁定，无法伪造。</p>
-        <div class="trace-dots">
-          <div class="tdot filled"></div><div class="tline"></div>
-          <div class="tdot filled"></div><div class="tline"></div>
-          <div class="tdot filled"></div><div class="tline"></div>
-          <div class="tdot filled"></div><div class="tline"></div>
-          <div class="tdot filled"></div>
-        </div>
-        <p class="dim" style="font-size:.76rem;text-align:center;margin-top:2px">种植 → 加工 → 物流 → 零售 → 消费者</p>
-      </div>
-      <div class="demo-right reveal-right" style="gap:var(--space-md)">
-        <div class="qr-card" id="qr-card">
-          <div class="qr-grid" id="qr-demo"></div>
-          <div class="qr-scan-line" id="qr-scan-line"></div>
+        <p class="deck-small">
+          无需钱包与服务器。所有演示在浏览器本地运行；教学资产不对应真实资产。电脑用
+          ← / → 切页，也可以滚动阅读。
+        </p>
+        <details class="deck-toc">
+          <summary>展开 14 页目录</summary>
+          <ol>
+            <li><a href="#s1">从记录到规则</a></li>
+            <li><a href="#s2">四层验证</a></li>
+            <li><a href="#s3">三本账的边界</a></li>
+            <li><a href="#s4">协议各有规则</a></li>
+            <li><a href="#s5">从问题看应用</a></li>
+            <li><a href="#s6">工程数据如何上链</a></li>
+            <li><a href="#s7">合约如何执行</a></li>
+            <li><a href="#s8">TradeLens 的教训</a></li>
+            <li><a href="#s9">风险在哪里</a></li>
+            <li><a href="#s10">采用前的四个问题</a></li>
+            <li><a href="#s11">演示一：签名与输入</a></li>
+            <li><a href="#s12">演示二：分叉与重组</a></li>
+            <li><a href="#s13">演示三：交换与对账</a></li>
+            <li><a href="#s14">课后八站与来源</a></li>
+          </ol>
+        </details>
+      </section>
+      <section class="slide" id="s2" data-title="四层验证">
+        <p class="eyebrow">02 / 14 · WHAT IS BEING VERIFIED?</p>
+        <h2>先问：你验证了哪一层？</h2>
+        <p class="deck-lead">
+          区块链把记录组织成相连的区块，节点按协议验证、传播并选择历史。不同层的“通过”，含义不同。
+        </p>
+        <table class="deck-table">
+          <thead>
+            <tr>
+              <th>这一层</th>
+              <th>可以核对</th>
+              <th>还不能推断</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>哈希与链接</td>
+              <td>内容与承诺是否一致</td>
+              <td>现实中的报告是否真实</td>
+            </tr>
+            <tr>
+              <td>签名与权限</td>
+              <td>签名、所有者、可花费输入</td>
+              <td>密钥背后是谁、交易是否划算</td>
+            </tr>
+            <tr>
+              <td>共识与选链</td>
+              <td>哪段有效历史被采用</td>
+              <td>所有节点此刻看到相同结果</td>
+            </tr>
+            <tr>
+              <td>执行与经济</td>
+              <td>状态变化、费用、资金来源</td>
+              <td>没有漏洞、没有价格风险</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="deck-note">
+          数据可以被修改；能否被发现、能否成为被接受的历史，取决于校验规则、可信锚点和协议假设。
+        </p>
+      </section>
+      <section class="slide" id="s3" data-title="三本账的边界">
+        <p class="eyebrow">03 / 14 · A USEFUL ANALOGY</p>
+        <h2>三个人记账，<br />还要约定怎么对账。</h2>
+        <div class="deck-columns">
           <div>
-            <p style="font-weight:600;font-size:.85rem">云南精品咖啡豆</p>
-            <p class="mono dim" style="font-size:.66rem;margin-top:3px">批次: YN-2024-0210-A</p>
-            <p class="mono dim" style="font-size:.66rem">根哈希: d4f1a9c2...</p>
-            <p style="color:var(--color-success);font-size:.76rem;margin-top:3px">✅ 完整且可信</p>
-            <button class="btn btn-primary" id="btn-scan" style="margin-top:var(--space-sm);padding:8px 16px;font-size:.76rem;gap:4px">📱 扫描验证</button>
+            <p class="deck-quote">
+              你、我、他各留一份账。发现不同，先查规则，再选历史。
+            </p>
+            <p class="deck-small">
+              副本可能暂时不同；轻节点也不一定保存完整历史。“人人有副本”本身没有解决作恶、排序与双花。
+            </p>
+          </div>
+          <ul class="deck-list">
+            <li>
+              <strong>内容变了？</strong
+              ><span>与已知哈希核对。仅在本地重算可以恢复链接自洽。</span>
+            </li>
+            <li>
+              <strong>这笔钱能花吗？</strong
+              ><span>验证签名、所有权与当前状态。</span>
+            </li>
+            <li>
+              <strong>两段历史都有效？</strong
+              ><span>采用协议规定的选择或最终性机制。</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+      <section class="slide" id="s4" data-title="协议各有规则">
+        <p class="eyebrow">04 / 14 · PROTOCOLS DIFFER</p>
+        <h2>共享账本，也有不同的规则。</h2>
+        <table class="deck-table">
+          <thead>
+            <tr>
+              <th>例子</th>
+              <th>重点</th>
+              <th>不能省略的边界</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Bitcoin</td>
+              <td>UTXO 与工作量证明</td>
+              <td>先验证；按累计工作选链，确认可能重组</td>
+            </tr>
+            <tr>
+              <td>Ethereum</td>
+              <td>账户、合约与权益证明</td>
+              <td>执行费、验证者机制和最终性各有规则</td>
+            </tr>
+            <tr>
+              <td>许可型账本</td>
+              <td>已知参与者协作</td>
+              <td>成员准入、身份、治理和协议选择仍需设计</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="deck-note">
+          去中心化有不同维度：节点、验证、密钥、治理与前端。不能从“用了链”推断没有管理员。
+        </p>
+        <p class="deck-small">
+          本项目的 PoW 网页是固定难度教学模型；不是 Bitcoin、Ethereum 或 PBFT
+          的完整实现。
+        </p>
+      </section>
+      <section class="slide" id="s5" data-title="从问题看应用">
+        <p class="eyebrow">05 / 14 · START FROM THE PROBLEM</p>
+        <h2>应用的价值，落在协作成本上。</h2>
+        <div class="deck-columns">
+          <ul class="deck-list">
+            <li>
+              <strong>供应链与工程档案</strong
+              ><span
+                >让多方核对同一批记录、签名与版本；真实性要靠采集、检验与责任流程。</span
+              >
+            </li>
+            <li>
+              <strong>数字资产与结算</strong
+              ><span
+                >在可验证状态下转移资产；链上完成与链下交付、兑付是不同环节。</span
+              >
+            </li>
+          </ul>
+          <ul class="deck-list">
+            <li>
+              <strong>版权与凭证</strong
+              ><span
+                >保存承诺与发行记录；持有凭证不自动取得著作权或法律效力。</span
+              >
+            </li>
+            <li>
+              <strong>敏感数据协作</strong
+              ><span
+                >先决定访问权限、链外存储与隐私要求，再决定哪些承诺放到链上。</span
+              >
+            </li>
+          </ul>
+        </div>
+        <p class="deck-note">
+          “3 秒结算”“永久存档”“绝不造假”都需要具体条件、比较基准与证据。
+        </p>
+      </section>
+      <section class="slide" id="s6" data-title="工程数据如何上链">
+        <p class="eyebrow">06 / 14 · A HYPOTHETICAL ENGINEERING WORKFLOW</p>
+        <h2>焊口报告上链，<br />没有替你检查焊口。</h2>
+        <p class="deck-lead">
+          假设施工方提交探伤报告。可以记录文件哈希、设备标识、提交人签名和验收状态；报告本体按权限存于链外。
+        </p>
+        <div class="deck-flow">
+          <b>设备采集 / 人工检验</b><span>→</span><b>签名与文件承诺</b
+          ><span>→</span><b>节点验证记录</b><span>→</span
+          ><b>多方复核 / 更正记录</b>
+        </div>
+        <div class="deck-columns">
+          <ul class="deck-list">
+            <li>
+              <strong>链帮助核对</strong
+              ><span>谁提交了什么版本，何时被记录，后续是否有修订。</span>
+            </li>
+          </ul>
+          <ul class="deck-list">
+            <li>
+              <strong>业务仍需保证</strong
+              ><span
+                >传感器校准、人员资质、样品对应、私钥管理、文件可用性。</span
+              >
+            </li>
+          </ul>
+        </div>
+        <p class="deck-note">
+          错误数据也能被一致记录。发现错误时追加有出处的更正，不能用哈希通过代替质量验收。
+        </p>
+      </section>
+      <section class="slide" id="s7" data-title="合约如何执行">
+        <p class="eyebrow">07 / 14 · EXECUTION HAS CONDITIONS</p>
+        <h2>合约按代码执行，<br />也会按代码失败。</h2>
+        <div class="deck-columns">
+          <div>
+            <div class="deck-flow">
+              <b>提交交易</b><span>→</span><b>纳入区块</b><span>→</span
+              ><b>执行与收据</b>
+            </div>
+            <p class="deck-lead">
+              有人发起调用，节点验证并执行。外部温度、GPS
+              和价格通常通过预言机等机制进入链上。
+            </p>
+          </div>
+          <ul class="deck-list">
+            <li>
+              <strong>回滚有范围</strong
+              ><span
+                >已纳入但执行失败的交易，业务状态和日志回滚；执行费用和 nonce
+                仍可能消耗。</span
+              >
+            </li>
+            <li>
+              <strong>权限有设计</strong
+              ><span>升级、暂停和参数管理可能存在；要查看实际代码。</span>
+            </li>
+            <li>
+              <strong>外部调用有风险</strong
+              ><span>接收方可能回调，也可能失败。</span>
+            </li>
+          </ul>
+        </div>
+        <div class="deck-actions">
+          <a href="account-lab.html">账户与执行实验 →</a
+          ><a href="security-lab.html">重入与防御实验 →</a>
+        </div>
+      </section>
+      <section class="slide" id="s8" data-title="TradeLens 的教训">
+        <p class="eyebrow">08 / 14 · A HISTORICAL CASE</p>
+        <h2>技术可行，<br />业务也可能走不下去。</h2>
+        <p class="deck-quote">
+          TradeLens：海运协作平台，<br />不应再当作持续运营的成功案例。
+        </p>
+        <p class="deck-lead">
+          马士基与 IBM 于 2022 年 11 月 29 日公告停止
+          TradeLens；公告将不足的行业协作与商业可行性列为原因，并计划在 2023
+          年第一季度末下线。
+        </p>
+        <p class="deck-note">
+          我们从这个案例得到的启示：先核对参与者意愿、分担成本和治理安排。链上机制不能替代商业协作。
+        </p>
+        <p class="deck-sources">
+          历史事实来源：<a
+            href="https://www.maersk.com/news/articles/2022/11/29/maersk-and-ibm-to-discontinue-tradelens"
+            >马士基原始公告（2022-11-29）</a
+          >
+        </p>
+      </section>
+      <section class="slide" id="s9" data-title="风险在哪里">
+        <p class="eyebrow">09 / 14 · LOCATE THE RISK</p>
+        <h2>安全与收益，都要说明假设。</h2>
+        <div class="deck-columns">
+          <ul class="deck-list">
+            <li>
+              <strong>协议与网络</strong
+              ><span
+                >分叉、确认深度、审查与可用性。PoW
+                算力优势不赋予伪造别人签名的能力。</span
+              >
+            </li>
+            <li>
+              <strong>密钥与治理</strong
+              ><span
+                >自托管密钥丢失可能无法恢复；托管与恢复方案则引入新的信任关系。</span
+              >
+            </li>
+            <li>
+              <strong>数据与隐私</strong
+              ><span
+                >来源错误、价格操纵、敏感信息泄露；一致存储不能解决它们。</span
+              >
+            </li>
+          </ul>
+          <ul class="deck-list">
+            <li>
+              <strong>合约与依赖</strong
+              ><span>重入、授权、升级和外部依赖都可能改变结果。</span>
+            </li>
+            <li>
+              <strong>资金与价格</strong
+              ><span>池子深度、持有差距、清算资金与坏账要逐项对账。</span>
+            </li>
+            <li>
+              <strong>工程与组织</strong
+              ><span>性能、存储、维护、成员协调与退出成本需要实测。</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+      <section class="slide" id="s10" data-title="采用前的四个问题">
+        <p class="eyebrow">10 / 14 · A DECISION CHECKLIST</p>
+        <h2>采用之前，先把四件事写下来。</h2>
+        <ul class="deck-list">
+          <li>
+            <strong>01 / 谁共同维护、谁有权验证？</strong
+            ><span>明确参与者、身份、治理与写入规则。</span>
+          </li>
+          <li>
+            <strong>02 / 普通数据库加签名日志能否解决？</strong
+            ><span>比较审计需求、信任假设、成本和失败后的恢复方式。</span>
+          </li>
+          <li>
+            <strong>03 / 如何保证输入可信、文件可用？</strong
+            ><span>定义采集检验、访问权限、链外存储和更正流程。</span>
+          </li>
+          <li>
+            <strong>04 / 哪种协议、哪些假设、如何退出？</strong
+            ><span>做小规模验证，记录吞吐、延迟、故障和参与者成本。</span>
+          </li>
+        </ul>
+        <p class="deck-small">
+          “需要永久保存”或“多方不互信”都不足以单独证明应该上链。
+        </p>
+      </section>
+      <section class="slide" id="s11" data-title="演示一：签名与输入">
+        <p class="eyebrow">11 / 14 · LIVE 01 · 6 MIN</p>
+        <h2>签名有效，<br />这笔钱就能花吗？</h2>
+        <div class="deck-columns">
+          <ul class="deck-list">
+            <li>
+              <strong>先改收款人</strong
+              ><span
+                >Alice 签名后改成 Eve，重算主体 ID：旧签名没有授权新内容。</span
+              >
+            </li>
+            <li>
+              <strong>再让 Eve 自己签名</strong
+              ><span>密码学验证可通过，但 Eve 不是 Alice 输入的所有者。</span>
+            </li>
+            <li>
+              <strong>最后确认冲突交易</strong
+              ><span>两份签名可以都有效，同一输入在选中历史只能花一次。</span>
+            </li>
+          </ul>
+          <div>
+            <table class="deck-table">
+              <thead>
+                <tr>
+                  <th>默认交易</th>
+                  <th>数量</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Alice 输入</td>
+                  <td class="number">70</td>
+                </tr>
+                <tr>
+                  <td>Bob 输出</td>
+                  <td class="number">45</td>
+                </tr>
+                <tr>
+                  <td>Alice 找零</td>
+                  <td class="number">24</td>
+                </tr>
+                <tr>
+                  <td>费用</td>
+                  <td class="number">1</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="deck-small">
+              70 = 45 + 24 + 1。确认后 Alice 合计 54，Bob 95，费用 1，总量仍为
+              150。
+            </p>
           </div>
         </div>
-        <div class="qr-result" id="qr-result">
-          <p class="qr-ok">✅ 已读取：云南精品咖啡豆</p>
-          <p class="qr-detail">批次 YN-2024-0210-A · 根哈希验证通过 · 7 个环节完整</p>
+        <div class="deck-actions">
+          <a
+            class="deck-link"
+            href="utxo-lab.html"
+            target="_blank"
+            rel="noopener"
+            >打开签名与 UTXO 实验 ↗</a
+          >
         </div>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:var(--space-xl)" class="reveal-up">
-      <a href="demo-trace.html" class="btn btn-primary">打开 Demo 3：供应链溯源 →</a>
-    </div>
-
-    <div style="margin-top:var(--space-3xl);overflow-x:auto" class="reveal-scale">
-      <table class="summary-table">
-        <thead><tr><th>特征</th><th>解决什么问题</th><th>供应链实例</th></tr></thead>
-        <tbody>
-          <tr><td>数字签名</td><td>身份验证、不可抵赖</td><td>每个环节负责人签名，事后无法否认</td></tr>
-          <tr><td>哈希链</td><td>数据不可篡改</td><td>环节记录锁定，改任何一个都检测得出</td></tr>
-          <tr><td>共识机制</td><td>多方共同确认</td><td>供应商、物流、零售三方共同验证，无需中间人</td></tr>
-          <tr><td>透明可追溯</td><td>端到端可查</td><td>消费者扫码看全旅程，从种子到杯子</td></tr>
-          <tr><td>智能合约</td><td>自动执行、无人干预</td><td>货到自动付款、温度超标自动理赔</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- ====== S14: ENDING ====== -->
-<section class="section" id="s14">
-  <div class="ending-glow reveal-blur" aria-hidden="true"></div>
-  <div class="section-inner" style="text-align:center">
-    <h1 class="ending-title reveal-blur">我的分享结束，谢谢大家</h1>
-  </div>
-</section>
-
-</main>
-
-<script>
-// ====== QR DEMO GRID ======
-(function(){
-  const g=document.getElementById('qr-demo');if(!g)return;
-  const s=[0,0,1,1,0,0,1,0,0,1,1,0,1,1,0,0,1,0,1,1,0,0,1,0,0,0,1,1,1,0,1,0,0,1,0,1,1,0,0,1,1,1,0,0,0,1,0,1,1,0,0,1,0,1,1,0,0,1,1,0,0,0,0,1,1,0,0,1,1,0,1,0,0,1,1,1,0,0,1,0,0,1,1,0,1,0,0,1,0,1,1,1,0,0,0,1,0,1,0,0,1,1,0,0,1,0,1,1,0,0,1,0,0,1,1,0,1,0,1,0,0];
-  for(let i=0;i<121;i++){const d=document.createElement('div');if(!s[i])d.classList.add('w');g.appendChild(d)}
-})();
-
-// ====== QR SCAN BUTTON ======
-(function(){
-  const btn=document.getElementById('btn-scan');
-  const line=document.getElementById('qr-scan-line');
-  const result=document.getElementById('qr-result');
-  if(!btn||!line||!result)return;
-  btn.addEventListener('click',()=>{
-    if(result.classList.contains('show'))return;
-    line.style.animation='qr-scan 1.5s ease-in-out';
-    line.style.opacity='1';
-    btn.disabled=true;btn.textContent='扫描中...';
-    setTimeout(()=>{
-      line.style.animation='';line.style.opacity='0';
-      result.classList.add('show');
-      btn.disabled=false;btn.textContent='📱 扫描验证';
-    },1550);
-  });
-})();
-
-// ====== S12 MINI VOTE DEMO ======
-(function(){
-  var slider=document.getElementById('mini-traitor-slider');
-  var countEl=document.getElementById('mini-traitor-count');
-  var verdict=document.getElementById('mini-vote-verdict');
-  var nodeEls=document.querySelectorAll('#mini-vote-demo .mini-vote-node');
-  if(!slider||!nodeEls.length)return;
-  var total=nodeEls.length;
-  var safeLimit=Math.floor((total-1)/3); // 5 nodes → max 1
-
-  function update(){
-    var v=parseInt(slider.value);
-    countEl.textContent=v;
-    nodeEls.forEach(function(el,i){
-      // last `v` nodes become traitors
-      el.classList.toggle('traitor',i>=total-v);
-    });
-    if(v<=safeLimit){
-      verdict.style.borderColor='oklch(66% 0.12 155 / .3)';
-      verdict.style.background='oklch(66% 0.12 155 / .08)';
-      verdict.style.color='var(--color-success)';
-      verdict.textContent='✅ 系统安全 · '+(total-v)+'/'+total+' 达成共识（≥ 2/3）';
-    }else{
-      verdict.style.borderColor='oklch(60% 0.12 22 / .3)';
-      verdict.style.background='oklch(60% 0.15 22 / .08)';
-      verdict.style.color='var(--color-danger)';
-      verdict.textContent='❌ 系统崩溃 · 仅 '+(total-v)+'/'+total+' 同意（< 2/3）';
-    }
-  }
-  slider.addEventListener('input',update);
-  slider.addEventListener('change',function(){this.blur()});
-})();
-
-// ====== CANVAS PARTICLE NETWORK ======
-(function(){
-  var canvas=document.getElementById('particle-canvas'),ctx=canvas.getContext('2d');
-  var w,h,mx=-999,my=-999;
-  function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight}
-  resize();window.addEventListener('resize',resize);
-
-  // Build node pool: 70 nodes drifting across screen
-  var N=70;
-  var nodes=[];
-  for(var i=0;i<N;i++){
-    nodes.push({
-      x:Math.random()*w,
-      y:Math.random()*h,
-      vx:(Math.random()-.5)*.35,
-      vy:(Math.random()-.5)*.35,
-      r:Math.random()*2.8+1.2
-    });
-  }
-
-  // Track mouse
-  document.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY});
-
-  function draw(){
-    ctx.clearRect(0,0,w,h);
-
-    // Update & draw
-    for(var i=0;i<N;i++){
-      var n=nodes[i];
-      n.x+=n.vx;n.y+=n.vy;
-      if(n.x<0)n.x=w;if(n.x>w)n.x=0;
-      if(n.y<0)n.y=h;if(n.y>h)n.y=0;
-
-      // Mouse repulsion
-      var dx=n.x-mx,dy=n.y-my;
-      var dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist<140&&dist>0.001){
-        var force=(140-dist)/140;
-        n.x+=dx/dist*force*.7;
-        n.y+=dy/dist*force*.7;
-      }
-
-      // Draw node
-      ctx.beginPath();
-      ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
-      ctx.fillStyle='oklch(82% 0.16 86 / .18)';
-      ctx.fill();
-    }
-
-    // Draw connections between nearby nodes
-    var maxDist=Math.min(w,h)*.22;
-    for(var i=0;i<N;i++){
-      for(var j=i+1;j<N;j++){
-        var dx=nodes[i].x-nodes[j].x;
-        var dy=nodes[i].y-nodes[j].y;
-        var d=Math.sqrt(dx*dx+dy*dy);
-        if(d<maxDist){
-          var alpha=(1-d/maxDist)*.12;
-          ctx.beginPath();
-          ctx.moveTo(nodes[i].x,nodes[i].y);
-          ctx.lineTo(nodes[j].x,nodes[j].y);
-          ctx.strokeStyle='oklch(82% 0.16 86 / '+alpha.toFixed(3)+')';
-          ctx.lineWidth=.5;
-          ctx.stroke();
-        }
-      }
-    }
-
-    // Ending section glow overlay
-    var s14=document.getElementById('s14');
-    if(s14){
-      var r=s14.getBoundingClientRect();
-      if(r.top<window.innerHeight&&r.bottom>0){
-        ctx.fillStyle='oklch(82% 0.16 86 / .04)';
-        ctx.fillRect(0,0,w,h);
-      }
-    }
-
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-
-// ====== PROGRESS BAR (vertical line) ======
-(function(){
-  const container=document.getElementById('progress-bar');
-  const secs=document.querySelectorAll('.section');
-  if(!container||!secs.length)return;
-
-  // Build vertical track and segments
-  const totalSecs=secs.length;
-  const segHeight=Math.min(16,Math.floor(400/totalSecs));
-  const trackHeight=segHeight*totalSecs;
-
-  const track=document.createElement('div');
-  track.className='pb-track';
-  track.style.height=trackHeight+'px';
-  container.appendChild(track);
-
-  const segsWrap=document.createElement('div');
-  segsWrap.className='pb-segments';
-  segsWrap.style.height=trackHeight+'px';
-  container.appendChild(segsWrap);
-
-  const shortLabels=['封面','定义','三本账','≠比特币','应用场景','采油站','智能合约','真实案例','弊端','决策树','数字签名','区块链','溯源','结束'];
-
-  for(let i=0;i<totalSecs;i++){
-    const seg=document.createElement('button');
-    seg.className='pb-seg';
-    seg.style.height=segHeight+'px';
-    seg.setAttribute('aria-label','跳转到第'+(i+1)+'页');
-    seg.title=shortLabels[i]||('第'+(i+1)+'页');
-    seg.addEventListener('click',function(){secs[i].scrollIntoView({behavior:'smooth'})});
-
-    const label=document.createElement('span');
-    label.className='pb-label';
-    label.textContent=shortLabels[i]||('');
-    seg.appendChild(label);
-
-    segsWrap.appendChild(seg);
-  }
-
-  const segs=segsWrap.querySelectorAll('.pb-seg');
-  const obs=new IntersectionObserver((entries)=>{
-    let best=null,bestRatio=0;
-    entries.forEach(function(e){if(e.intersectionRatio>bestRatio){bestRatio=e.intersectionRatio;best=e.target}});
-    if(best){
-      const idx=Array.from(secs).indexOf(best);
-      segs.forEach(function(s){s.classList.remove('active')});
-      if(segs[idx])segs[idx].classList.add('active');
-    }
-  },{threshold:[.1,.2,.3,.4,.5,.6,.7,.8,.9]});
-  secs.forEach(function(s){obs.observe(s)});
-})();
-
-// ====== REVEAL ANIMATIONS ======
-(function(){
-  const els=document.querySelectorAll('.reveal-up,.reveal-left,.reveal-right,.reveal-scale,.reveal-blur,.reveal-stagger');
-  const obs=new IntersectionObserver((entries)=>{
-    entries.forEach(function(e){
-      if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}
-    });
-  },{threshold:.18,rootMargin:'0px 0px -30px 0px'});
-  els.forEach(function(el){obs.observe(el)});
-})();
-
-// ====== KEYBOARD NAVIGATION ======
-(function(){
-  const secs=document.querySelectorAll('.section');
-  function curIdx(){
-    let best=0,br=0;
-    secs.forEach(function(s,i){
-      const rect=s.getBoundingClientRect();
-      const vh=window.innerHeight;
-      if(rect.bottom<0||rect.top>vh)return;
-      const visTop=Math.max(rect.top,0),visBot=Math.min(rect.bottom,vh);
-      const ratio=Math.max(0,(visBot-visTop)/Math.min(rect.height,vh));
-      if(ratio>br){br=ratio;best=i}
-    });
-    return best;
-  }
-  document.addEventListener('keydown',function(e){
-    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
-      if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
-      e.preventDefault();
-      const cur=curIdx(),target=e.key==='ArrowDown'?Math.min(cur+1,secs.length-1):Math.max(cur-1,0);
-      secs[target].scrollIntoView({behavior:'smooth'});
-    }
-  });
-})();
-
-// ====== HASH JUMP (return from demo to specific section) ======
-(function(){
-  var main=document.getElementById('main');
-  if(!main)return;
-  function jumpToHash(){
-    var h=window.location.hash;
-    if(!h)return;
-    var el=document.querySelector(h);
-    if(!el)return;
-    // Defer so scroll-snap + layout settle, then force the #main container to scroll
-    setTimeout(function(){el.scrollIntoView({block:'start'});},60);
-  }
-  window.addEventListener('load',jumpToHash);
-  window.addEventListener('hashchange',jumpToHash);
-})();
-</script>
-</body>
+        <p class="deck-small">
+          使用原生 ECDSA P-256；角色、主体 ID 与指纹是教学设计，不能作为 Bitcoin
+          钱包。刷新会生成新密钥。
+        </p>
+      </section>
+      <section class="slide" id="s12" data-title="演示二：分叉与重组">
+        <p class="eyebrow">12 / 14 · LIVE 02 · 6 MIN</p>
+        <h2>两个节点支持，<br />也不能靠人数胜出。</h2>
+        <div class="deck-columns">
+          <ul class="deck-list">
+            <li>
+              <strong>传播冲突，建立等工作分叉</strong
+              ><span>A / B 选 X，C 选 Y。双方有效工作都是 16。</span>
+            </li>
+            <li>
+              <strong>C 追加有效空块</strong
+              ><span
+                >Y 分支工作变为 32。传播后，A / B 重放交易并回滚 X
+                的结果。</span
+              >
+            </li>
+            <li>
+              <strong>再看无效长链</strong
+              ><span>越权交易不会因为工作更多而成为有效交易。</span>
+            </li>
+          </ul>
+          <div>
+            <div class="deck-flow">
+              <b>校验候选</b><span>→</span><b>比较有效工作</b><span>→</span
+              ><b>重放账本</b>
+            </div>
+            <p class="deck-note">
+              等工作保留本地当前链，是本页规则。这里不做多数投票，也不模拟
+              PBFT。
+            </p>
+            <p class="deck-small">
+              每个非创世有效块按固定难度计 16
+              个期望工作单位，不是实际尝试次数。三节点都运行在同一个浏览器内。
+            </p>
+          </div>
+        </div>
+        <div class="deck-actions">
+          <a
+            class="deck-link"
+            href="network-lab.html"
+            target="_blank"
+            rel="noopener"
+            >打开分叉与重组实验 ↗</a
+          ><a href="chain-lab.html">先看哈希与 PoW →</a>
+        </div>
+      </section>
+      <section class="slide" id="s13" data-title="演示三：交换与对账">
+        <p class="eyebrow">13 / 14 · LIVE 03 · 5 MIN</p>
+        <h2>报价不是承诺。<br />先预测，再逐资产对账。</h2>
+        <div class="deck-columns">
+          <div>
+            <table class="deck-table">
+              <thead>
+                <tr>
+                  <th>池子</th>
+                  <th>交换前</th>
+                  <th>交换后</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>A 储备</td>
+                  <td class="number">1000</td>
+                  <td class="number">1100</td>
+                </tr>
+                <tr>
+                  <td>B 储备</td>
+                  <td class="number">1000</td>
+                  <td class="number">909.338911</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="deck-small">
+              输入 100 A，费率 0.3%，输出 90.661089
+              B；完整输入留在池中。此整数模型有手续费时储备乘积增长。
+            </p>
+          </div>
+          <ul class="deck-list">
+            <li>
+              <strong>预测与执行</strong
+              ><span>初始比例 1:1，不代表 100 A 能换 100 B。</span>
+            </li>
+            <li>
+              <strong>另一账户先交易</strong
+              ><span>再执行旧报价，检查最小接收量与未扣款的账本。</span>
+            </li>
+            <li>
+              <strong>课后扩展</strong
+              ><span>LP 与持有比较；借贷健康因子、清算和坏账。</span>
+            </li>
+          </ul>
+        </div>
+        <div class="deck-actions">
+          <a
+            class="deck-link"
+            href="defi-exchange.html"
+            target="_blank"
+            rel="noopener"
+            >打开交换实验 ↗</a
+          ><a href="defi-liquidity.html">LP →</a
+          ><a href="defi-lending.html">借贷 →</a>
+        </div>
+        <p class="deck-small">
+          简化恒定乘积池、6
+          位小数与两档手续费。借贷另采用全额关闭规则；不推断真实协议收益或清算行为。
+        </p>
+      </section>
+      <section class="slide" id="s14" data-title="课后八站与来源">
+        <p class="eyebrow">14 / 14 · YOUR NEXT EXPERIMENT</p>
+        <h2>
+          实验不是结论。<br /><span class="blue">改一改，再问为什么。</span>
+        </h2>
+        <p class="deck-lead">
+          每站做两道情景题，用账本写一段解释，再完成一个源码挑战。自检是学习记录，解释没有自动评分。
+        </p>
+        <div class="deck-route">
+          <a href="../learning-path.html?lesson=hash#learning-workbench"
+            >01 / 哈希与有效历史 →</a
+          ><a href="../learning-path.html?lesson=utxo#learning-workbench"
+            >02 / 签名与可花费输入 →</a
+          ><a href="../learning-path.html?lesson=network#learning-workbench"
+            >03 / 分叉与账本重组 →</a
+          ><a href="../learning-path.html?lesson=account#learning-workbench"
+            >04 / 账户与合约执行 →</a
+          ><a href="../learning-path.html?lesson=exchange#learning-workbench"
+            >05 / 交换与资金对账 →</a
+          ><a href="../learning-path.html?lesson=lp#learning-workbench"
+            >06 / LP 与持有比较 →</a
+          ><a href="../learning-path.html?lesson=lending#learning-workbench"
+            >07 / 借贷与清算坏账 →</a
+          ><a href="../learning-path.html?lesson=security#learning-workbench"
+            >08 / 重入与安全边界 →</a
+          >
+        </div>
+        <div class="deck-actions">
+          <a class="deck-link" href="../learning-path.html">进入学习工作台 →</a
+          ><a href="../02-演讲稿/演讲稿（对外版）.docx" download
+            >下载 Word 讲稿</a
+          ><a href="../02-演讲稿/演讲稿（对外版）.md" download>Markdown 原稿</a>
+        </div>
+        <p class="deck-sources">
+          技术与案例来源：<a
+            href="https://developer.bitcoin.org/devguide/block_chain.html"
+            >Bitcoin 开发指南</a
+          ><a href="https://ethereum.org/en/developers/docs/oracles/"
+            >Ethereum 预言机文档</a
+          ><a
+            href="https://docs.soliditylang.org/en/v0.8.20/security-considerations.html"
+            >Solidity 0.8.20 安全说明</a
+          ><a
+            href="https://www.maersk.com/news/articles/2022/11/29/maersk-and-ibm-to-discontinue-tradelens"
+            >TradeLens 停止公告</a
+          >
+          · 校订：2026-10-14
+        </p>
+      </section>
+    </main>
+    <nav class="deck-rail" aria-label="投影片导航">
+      <button id="deck-prev" disabled>← 上一页</button
+      ><label for="deck-select" class="sr-only">选择投影片</label
+      ><select id="deck-select" disabled>
+        <option value="s1">01 从记录到规则</option>
+        <option value="s2">02 四层验证</option>
+        <option value="s3">03 三本账的边界</option>
+        <option value="s4">04 协议各有规则</option>
+        <option value="s5">05 从问题看应用</option>
+        <option value="s6">06 工程数据如何上链</option>
+        <option value="s7">07 合约如何执行</option>
+        <option value="s8">08 TradeLens 的教训</option>
+        <option value="s9">09 风险在哪里</option>
+        <option value="s10">10 采用前的四个问题</option>
+        <option value="s11">11 演示一：签名与输入</option>
+        <option value="s12">12 演示二：分叉与重组</option>
+        <option value="s13">13 演示三：交换与对账</option>
+        <option value="s14">14 课后八站与来源</option></select
+      ><span id="deck-count" class="deck-count">01 / 14</span
+      ><button id="deck-next" disabled>下一页 →</button>
+    </nav>
+    <noscript
+      ><p class="deck-note">
+        脚本未启用：可滚动阅读全部内容，使用封面目录跳转，或用浏览器打印。
+      </p></noscript
+    >
+  </body>
 </html>

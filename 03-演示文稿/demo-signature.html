@@ -3,33 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>数字签名演示</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<title>简化 RSA 图解（历史模型） · 区块链学习实验室</title>
+<link rel="stylesheet" href="../assets/css/lab.css">
 <style>
 /* ====== RESET & BASE ====== */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px}
 
 :root{
-  --color-bg:        oklch(26% 0.10 252);
-  --color-surface:   oklch(31% 0.09 252);
-  --color-surface2:  oklch(35% 0.08 252);
-  --color-surface3:  oklch(39% 0.07 252);
-  --color-text:      oklch(86% 0.10 85);
-  --color-text-dim:  oklch(68% 0.07 82);
-  --color-text-muted:oklch(52% 0.04 78);
-  --color-accent:    oklch(82% 0.16 86);
-  --color-accent-dim:oklch(70% 0.12 84);
-  --color-accent-glow:oklch(82% 0.16 86 / .55);
-  --color-accent-soft:oklch(82% 0.16 86 / .22);
-  --color-warm:      oklch(76% 0.14 65);
-  --color-danger:    oklch(60% 0.15 22);
-  --color-success:   oklch(66% 0.12 155);
-  --color-verify:    oklch(68% 0.12 195);
-  --border-subtle:   oklch(38% 0.06 250);
-  --border-card:     oklch(33% 0.05 248);
+  --color-bg:        rgba(214,220,214,1);
+  --color-surface:   rgba(214,220,214,1);
+  --color-surface2:  rgba(214,220,214,1);
+  --color-surface3:  rgba(214,220,214,1);
+  --color-text:      rgba(36,88,223,1);
+  --color-text-dim:  rgba(36,88,223,1);
+  --color-text-muted:rgba(176,77,34,1);
+  --color-accent:    rgba(36,88,223,1);
+  --color-accent-dim:rgba(36,88,223,1);
+  --color-accent-glow:rgba(36,88,223,.55);
+  --color-accent-soft:rgba(36,88,223,.22);
+  --color-warm:      rgba(176,77,34,1);
+  --color-danger:    rgba(181,57,47,1);
+  --color-success:   rgba(36,114,88,1);
+  --color-verify:    rgba(36,88,223,1);
+  --border-subtle:   rgba(214,220,214,1);
+  --border-card:     rgba(214,220,214,1);
   --font-display:'Sora',system-ui,sans-serif;
   --font-mono:'JetBrains Mono','Courier New',monospace;
   --font-body:'PingFang SC','Microsoft YaHei','Hiragino Sans GB',sans-serif;
@@ -55,7 +53,7 @@ body{
 
 /* ====== PROGRESS BAR ====== */
 #progress-bar{position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;align-items:center}
-#progress-bar .pb-track{width:1px;background:oklch(86% 0.10 85 / .12);border-radius:1px}
+#progress-bar .pb-track{width:1px;background:rgba(36,88,223,.12);border-radius:1px}
 #progress-bar .pb-segments{display:flex;flex-direction:column;position:absolute;inset:0}
 #progress-bar .pb-seg{flex:1;cursor:pointer;position:relative;background:transparent;border:none;outline:none;transition:background .35s var(--ease-out)}
 #progress-bar .pb-seg.active{background:var(--color-accent);box-shadow:0 0 10px var(--color-accent-glow)}
@@ -93,7 +91,7 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
 .btn{
   display:inline-flex;align-items:center;gap:8px;
   padding:12px 26px;font-family:var(--font-display);font-weight:600;font-size:.92rem;
-  background:var(--color-accent);color:oklch(24% 0.08 252);
+  background:var(--color-accent);color:rgba(255,255,255,1);
   border:none;border-radius:var(--radius-sm);cursor:pointer;
   transition:transform .2s var(--ease-out),box-shadow .2s var(--ease-out),opacity .3s;
 }
@@ -101,9 +99,9 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
 .btn:active{transform:translateY(0)}
 .btn:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
 .btn.used{opacity:.35;pointer-events:none}
-.btn.tamper-btn{background:var(--color-warm);color:oklch(20% 0.04 60)}
+.btn.tamper-btn{background:var(--color-warm);color:rgba(176,77,34,1)}
 .btn.outline{background:transparent;border:1.5px solid var(--color-accent);color:var(--color-accent)}
-.btn.outline:hover{background:oklch(82% 0.16 86 / .08)}
+.btn.outline:hover{background:rgba(36,88,223,.08)}
 
 /* ====== STEP 1: KEYS ====== */
 .keys{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
@@ -114,8 +112,8 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
   transition:opacity .5s var(--ease-out),transform .5s var(--ease-out);
 }
 .key-card.show{opacity:1;transform:translateY(0)}
-.key-card.priv{border:1px solid oklch(60% 0.12 22 / .45)}
-.key-card.pub{border:1px solid oklch(82% 0.12 86 / .45);transition-delay:.1s}
+.key-card.priv{border:1px solid rgba(181,57,47,.45)}
+.key-card.pub{border:1px solid rgba(36,88,223,.45);transition-delay:.1s}
 .key-card .kicon{font-size:30px;display:block;margin-bottom:6px}
 .key-card .klabel{font-family:var(--font-display);font-weight:600;font-size:.9rem;margin-bottom:12px}
 .key-card.priv .klabel{color:var(--color-danger)}
@@ -153,10 +151,10 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
 .block .bhash{font-family:var(--font-mono);font-size:.64rem;color:var(--color-text-dim);word-break:break-all;line-height:1.3}
 .block .bsig{font-family:var(--font-mono);font-size:.64rem;color:var(--color-warm);margin-top:4px;word-break:break-all}
 .block .bstatus{display:inline-block;margin-top:6px;font-size:.68rem;font-family:var(--font-display);font-weight:600;padding:2px 10px;border-radius:10px}
-.block.ok .bstatus{color:var(--color-success);background:oklch(66% 0.12 155 / .12)}
-.block.broken .bstatus{color:var(--color-danger);background:oklch(60% 0.15 22 / .12)}
-.block.broken{border-color:var(--color-danger);background:oklch(60% 0.15 22 / .06)}
-.block.ok{border-color:oklch(66% 0.10 155 / .35)}
+.block.ok .bstatus{color:var(--color-success);background:rgba(36,114,88,.12)}
+.block.broken .bstatus{color:var(--color-danger);background:rgba(181,57,47,.12)}
+.block.broken{border-color:var(--color-danger);background:rgba(181,57,47,.06)}
+.block.ok{border-color:rgba(36,114,88,.35)}
 
 .chain-link{
   display:flex;align-items:center;justify-content:center;
@@ -194,8 +192,8 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
   opacity:0;transform:translateY(16px);
 }
 .verifier-card.show{opacity:1;transform:translateY(0)}
-.verifier-card.verifying{border-color:var(--color-accent);box-shadow:0 0 24px oklch(82% 0.16 86 / .2)}
-.verifier-card.pass{border-color:var(--color-success);background:oklch(66% 0.12 155 / .05);box-shadow:0 0 20px oklch(66% 0.12 155 / .15)}
+.verifier-card.verifying{border-color:var(--color-accent);box-shadow:0 0 24px rgba(36,88,223,.2)}
+.verifier-card.pass{border-color:var(--color-success);background:rgba(36,114,88,.05);box-shadow:0 0 20px rgba(36,114,88,.15)}
 .verifier-card .vicon{font-size:32px;display:block;margin-bottom:8px}
 .verifier-card .vname{font-family:var(--font-display);font-weight:600;font-size:.9rem;margin-bottom:4px;color:var(--color-text)}
 .verifier-card .vrole{font-size:.76rem;color:var(--color-text-dim);margin-bottom:14px}
@@ -215,23 +213,23 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
   transition:opacity .6s var(--ease-out),transform .6s var(--ease-out),border-color .4s,background .4s;
 }
 .unified-result.show{opacity:1;transform:translateY(0)}
-.unified-result.pass{border:1px solid var(--color-success);background:oklch(66% 0.12 155 / .06)}
+.unified-result.pass{border:1px solid var(--color-success);background:rgba(36,114,88,.06)}
 .unified-result .urtitle{font-family:var(--font-display);font-weight:700;font-size:1.1rem;margin-bottom:8px}
 .unified-result.pass .urtitle{color:var(--color-success)}
 .unified-result .ursub{font-size:.88rem;color:var(--color-text-dim);line-height:1.7}
 
 @keyframes verifySweep{
-  0%{box-shadow:inset 0 0 0 0 oklch(82% 0.16 86 / 0)}
-  50%{box-shadow:inset 0 0 24px 8px oklch(82% 0.16 86 / .25)}
-  100%{box-shadow:inset 0 0 0 0 oklch(82% 0.16 86 / 0)}
+  0%{box-shadow:inset 0 0 0 0 rgba(36,88,223,0)}
+  50%{box-shadow:inset 0 0 24px 8px rgba(36,88,223,.25)}
+  100%{box-shadow:inset 0 0 0 0 rgba(36,88,223,0)}
 }
 .block.scanning{animation:verifySweep .7s var(--ease-out)}
 @keyframes checkPop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.3)}100%{transform:scale(1);opacity:1}}
 .check-mark{display:inline-block;animation:checkPop .4s var(--ease-smooth) forwards;color:var(--color-success);font-weight:700}
 
 @keyframes unisonPulse{
-  0%{box-shadow:0 0 0 0 oklch(66% 0.12 155 / .5)}
-  100%{box-shadow:0 0 0 24px oklch(66% 0.12 155 / 0)}
+  0%{box-shadow:0 0 0 0 rgba(36,114,88,.5)}
+  100%{box-shadow:0 0 0 24px rgba(36,114,88,0)}
 }
 .unified-result.pass.unison{animation:unisonPulse 1s var(--ease-out)}
 
@@ -244,15 +242,15 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
   font-family:var(--font-body);
 }
 .tamper-target:hover{border-color:var(--color-warm)}
-.tamper-target.selected{border-color:var(--color-warm);background:oklch(76% 0.14 65 / .1)}
+.tamper-target.selected{border-color:var(--color-warm);background:rgba(176,77,34,.1)}
 
 .tamper-edit{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
 .tamper-edit input{flex:1;min-width:200px;padding:10px 14px;background:var(--color-surface2);color:var(--color-text);border:1px solid var(--color-warm);border-radius:var(--radius-md);font-family:inherit;font-size:.9rem}
 .tamper-edit input:focus{outline:none;border-color:var(--color-danger)}
 
 .alert-bar{
-  padding:14px 20px;background:oklch(60% 0.15 22 / .08);
-  border:1px solid oklch(60% 0.12 22 / .35);border-radius:var(--radius-md);
+  padding:14px 20px;background:rgba(181,57,47,.08);
+  border:1px solid rgba(181,57,47,.35);border-radius:var(--radius-md);
   color:var(--color-danger);font-weight:600;font-size:.92rem;margin:16px 0;
   opacity:0;transform:translateY(-8px);transition:opacity .4s,transform .4s;
 }
@@ -270,7 +268,7 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
 
 @keyframes shackle{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 .block.shaking{animation:shackle .08s ease-in-out 5}
-@keyframes redGlow{0%,100%{box-shadow:0 0 0 0 oklch(60% 0.15 22 / 0)}50%{box-shadow:0 0 20px 6px oklch(60% 0.15 22 / .3)}}
+@keyframes redGlow{0%,100%{box-shadow:0 0 0 0 rgba(181,57,47,0)}50%{box-shadow:0 0 20px 6px rgba(181,57,47,.3)}}
 .block.glowing{animation:redGlow .8s var(--ease-out) 3}
 
 /* ====== FOOTER ====== */
@@ -289,13 +287,11 @@ footer{text-align:center;padding:40px 24px;color:var(--color-text-dim);font-size
   #top-nav{padding:10px 16px}
 }
 </style>
+<link rel="stylesheet" href="../assets/css/legacy-demo.css">
 </head>
-<body>
+<body class="legacy-demo">
 
-<div id="top-nav">
-  <a href="blockchain-presentation.html#s11">← 返回演示</a>
-  <span>数字签名演示</span>
-</div>
+<nav id="top-nav" aria-label="页面导航"><a class="brand" href="../index.html"><span class="brand-mark">▦</span>区块链学习实验室</a><a class="legacy-back" href="blockchain-presentation.html">返回分享文稿 →</a></nav>
 
 <nav id="progress-bar" aria-label="步骤进度"></nav>
 
@@ -304,6 +300,7 @@ footer{text-align:center;padding:40px 24px;color:var(--color-text-dim);font-size
 <!-- ====== STEP 1 ====== -->
 <section class="section" id="s1">
   <div class="section-inner">
+<aside class="legacy-note"><strong>简化 RSA 图解（历史模型）</strong><p>这里使用小整数 RSA 与简化摘要，不能保护真实数据，也不等同于现代钱包签名。验证的是示例记录；不能由签名推断现实身份或业务真实。</p><a href="utxo-lab.html">真实签名与 UTXO 实验 →</a></aside>
     <div class="reveal-up"><p class="section-label">Step 1</p></div>
     <h2 class="reveal-up">生成密钥对</h2>
     <p class="step-desc reveal-up">私钥用来签名——只有你自己持有。公钥用来验证——可以发给任何人。<br>这里使用简化 RSA：两个小素数 p=61, q=53，让你能看清每一步的数学过程。</p>
@@ -313,7 +310,7 @@ footer{text-align:center;padding:40px 24px;color:var(--color-text-dim);font-size
     <div class="keys" id="keysBox" style="display:none">
       <div class="key-card priv" id="kcPriv">
         <span class="kicon">🔒</span>
-        <div class="klabel">私钥 · 绝不可泄露</div>
+        <div class="klabel">教学私钥 · 已公开，勿真实使用</div>
         <div class="kval">d = 2753</div>
         <div class="ksub">n = 3233</div>
       </div>
@@ -329,7 +326,7 @@ footer{text-align:center;padding:40px 24px;color:var(--color-text-dim);font-size
       <strong>RSA 原理（极简）</strong><br>
       找两个素数 p=61, q=53 → 相乘得 n=3233。找 e=17 和 d=2753，使 (m<sup>e</sup>)<sup>d</sup> mod n = m。<br>
       <strong>签名</strong>：哈希值<sup>d</sup> mod n &nbsp;|&nbsp; <strong>验证</strong>：签名<sup>e</sup> mod n，看是否等于哈希值。<br>
-      安全根基：真实场景中 n 是一个 600 位的天文数字，从 n 反推 p 和 q 需要宇宙年龄那么久。
+      模型边界：本页的小整数 RSA 与简化摘要不安全。真实密码方案需要规定算法、密钥长度和威胁模型，不能用“宇宙年龄”概括其安全性。
     </div>
   </div>
 </section>
@@ -343,7 +340,7 @@ footer{text-align:center;padding:40px 24px;color:var(--color-text-dim);font-size
 
     <div class="chain-scene reveal-up">
       <div class="scene-title">场景：跨区域管道工程 · DN800 钢管供应</div>
-      <div class="scene-text">你作为<strong style="color:var(--color-accent)">物资供应商（北方钢铁集团）</strong>，负责向工程建设项目部供应一批特种钢管。每一环节的经手人都对数据签名确认，哈希值串联形成不可篡改的审计链。</div>
+      <div class="scene-text">你作为<strong style="color:var(--color-accent)">物资供应商（北方钢铁集团）</strong>，负责向工程建设项目部供应一批特种钢管。每一环节的经手人都对数据签名确认，哈希值串联形成示例记录链。</div>
     </div>
 
     <div class="chain-wrap reveal-up">
@@ -370,7 +367,7 @@ footer{text-align:center;padding:40px 24px;color:var(--color-text-dim);font-size
   <div class="section-inner">
     <div class="reveal-up"><p class="section-label">Step 3</p></div>
     <h2 class="reveal-up">分布式验证——任何人都可以独立核验</h2>
-    <p class="step-desc reveal-up">区块链没有中心权威。任何人——监理公司、银行、监管机构、甚至普通公众——都可以下载这条链，<strong style="color:var(--color-accent)">独立运行验证</strong>。所有人得到同一个结论，不需要信任任何一个"上级"。</p>
+    <p class="step-desc reveal-up">区块链没有中心权威。任何人——监理公司、银行、监管机构、甚至普通公众——都可以下载这条链，<strong style="color:var(--color-accent)">独立运行验证</strong>。所有人得到同一个结论，仍需核对可信锚点和具体协议。</p>
 
     <div class="reveal-up"><button class="btn" id="btnVerify" onclick="verifyAll()">🔍 启动分布式验证</button></div>
 
@@ -445,7 +442,7 @@ footer{text-align:center;padding:40px 24px;color:var(--color-text-dim);font-size
 
     <div class="summary" id="summaryBox">
       <p>篡改了一条记录 → 该记录的哈希值改变 → 下一条记录的「前一条哈希」对不上 → 下一条记录的签名也失效 → <strong style="color:var(--color-danger)">级联断裂</strong>。</p>
-      <p style="margin-top:8px">改其中一个环节，后面<strong style="color:var(--color-danger)">全部作废</strong>。攻击者没有私钥，无法为篡改后的数据重新生成有效签名。<br><strong style="color:var(--color-accent)">这就是区块链的防篡改核心——签名 + 哈希链 = 不可伪造、不可篡改。</strong></p>
+      <p style="margin-top:8px">改其中一个环节，后面<strong style="color:var(--color-danger)">全部作废</strong>。攻击者没有私钥，无法为篡改后的数据重新生成有效签名。<br><strong style="color:var(--color-accent)">这就是区块链的防篡改核心——签名与哈希链帮助检查内容授权和链接；历史选择与事实真实性仍需其他机制。</strong></p>
     </div>
   </div>
 </section>
@@ -579,7 +576,7 @@ function genKeys(){
 // ====== STEP 2: SIGN ======
 function signBlock(){
   if(!keysShown){
-    document.getElementById('s1').scrollIntoView({behavior:'smooth',block:'start'});
+    document.getElementById('s1').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
     setTimeout(genKeys,300);
     return;
   }
@@ -594,7 +591,7 @@ function signBlock(){
   document.getElementById('btnSign').classList.add('used');
   document.getElementById('signInfo').style.display='block';
   document.getElementById('signInfo').innerHTML=
-    '✅ 已签名 · 哈希=<span style="font-family:JetBrains Mono,monospace;color:var(--color-accent)">'+currentChain[1].hash+'</span> · 签名=<span style="font-family:JetBrains Mono,monospace;color:var(--color-warm)">'+currentChain[1].signature+'</span>';
+    '✅ 已签名 · 哈希=<span style="font-family:var(--font-mono);color:var(--color-accent)">'+currentChain[1].hash+'</span> · 签名=<span style="font-family:var(--font-mono);color:var(--color-warm)">'+currentChain[1].signature+'</span>';
 
   input.disabled=true;
   renderChain(currentChain,'chainBlocks');
@@ -606,7 +603,7 @@ function signBlock(){
 // ====== STEP 3: VERIFY ======
 function verifyAll(){
   if(!signed){
-    document.getElementById('s2').scrollIntoView({behavior:'smooth',block:'start'});
+    document.getElementById('s2').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
     return;
   }
 
@@ -686,15 +683,15 @@ function showUnifiedResult(){
   ur.innerHTML=
     '<div class="urtitle">✅ 4 个独立验证方，同一个结论</div>'+
     '<div class="ursub">监理公司、银行、监管部门、公众——彼此互不认识，各自独立运行验证。<br>'+
-    '没有中央权威，没有"上级"审批——<strong style="color:var(--color-success)">算法就是担保</strong>。<br>'+
-    '这就是<strong style="color:var(--color-accent)">分布式信任</strong>：不需要信任任何单一方，只需要信任数学。</div>';
+    '没有中央权威，没有"上级"审批——<strong style="color:var(--color-success)">本页按示例规则得到相同结果</strong>。<br>'+
+    '这就是<strong style="color:var(--color-accent)">分布式信任</strong>：不需要信任任何单一方，仍需检查密钥、输入来源和协议假设。</div>';
 
   document.getElementById('s3').classList.add('completed');
 
   setTimeout(function(){
     document.querySelectorAll('#chainBlocksVerify .block').forEach(function(b){
-      b.style.borderColor='oklch(66% 0.12 155)';
-      b.style.boxShadow='0 0 12px oklch(66% 0.12 155 / .2)';
+      b.style.borderColor='rgba(36,114,88,1)';
+      b.style.boxShadow='0 0 12px rgba(36,114,88,.2)';
     });
   },800);
 }
@@ -881,7 +878,7 @@ function init(){
     seg.style.height=segHeight+'px';
     seg.setAttribute('aria-label','跳转到步骤'+(i+1));
     seg.title=shortLabels[i];
-    seg.addEventListener('click',function(){secs[i].scrollIntoView({behavior:'smooth'})});
+    seg.addEventListener('click',function(){secs[i].scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})});
 
     const label=document.createElement('span');
     label.className='pb-label';
@@ -920,10 +917,10 @@ function init(){
   }
   document.addEventListener('keydown',function(e){
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){
-      if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+      if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey||e.target.closest('input,textarea,select,button,a,summary,[contenteditable]'))return;
       e.preventDefault();
       const cur=curIdx(),target=e.key==='ArrowDown'?Math.min(cur+1,secs.length-1):Math.max(cur-1,0);
-      secs[target].scrollIntoView({behavior:'smooth'});
+      secs[target].scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
     }
   });
 })();

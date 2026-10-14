@@ -3,31 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>共识机制演示 · PBFT</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<title>投票流程图解（历史模型） · 区块链学习实验室</title>
+<link rel="stylesheet" href="../assets/css/lab.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px}
 
 :root{
-  --color-bg:        oklch(26% 0.10 252);
-  --color-surface:   oklch(31% 0.09 252);
-  --color-surface2:  oklch(35% 0.08 252);
-  --color-surface3:  oklch(39% 0.07 252);
-  --color-text:      oklch(86% 0.10 85);
-  --color-text-dim:  oklch(68% 0.07 82);
-  --color-accent:    oklch(82% 0.16 86);
-  --color-accent-dim:oklch(70% 0.12 84);
-  --color-accent-glow:oklch(82% 0.16 86 / .55);
-  --color-accent-soft:oklch(82% 0.16 86 / .22);
-  --color-warm:      oklch(76% 0.14 65);
-  --color-danger:    oklch(60% 0.15 22);
-  --color-success:   oklch(66% 0.12 155);
-  --color-info:      oklch(68% 0.12 195);
-  --border-subtle:   oklch(38% 0.06 250);
-  --border-card:     oklch(33% 0.05 248);
+  --color-bg:        rgba(214,220,214,1);
+  --color-surface:   rgba(214,220,214,1);
+  --color-surface2:  rgba(214,220,214,1);
+  --color-surface3:  rgba(214,220,214,1);
+  --color-text:      rgba(36,88,223,1);
+  --color-text-dim:  rgba(36,88,223,1);
+  --color-accent:    rgba(36,88,223,1);
+  --color-accent-dim:rgba(36,88,223,1);
+  --color-accent-glow:rgba(36,88,223,.55);
+  --color-accent-soft:rgba(36,88,223,.22);
+  --color-warm:      rgba(176,77,34,1);
+  --color-danger:    rgba(181,57,47,1);
+  --color-success:   rgba(36,114,88,1);
+  --color-info:      rgba(36,88,223,1);
+  --border-subtle:   rgba(214,220,214,1);
+  --border-card:     rgba(214,220,214,1);
   --font-display:'Sora',system-ui,sans-serif;
   --font-mono:'JetBrains Mono','Courier New',monospace;
   --font-body:'PingFang SC','Microsoft YaHei','Hiragino Sans GB',sans-serif;
@@ -44,7 +42,7 @@ body{font-family:var(--font-body);background:var(--color-bg);color:var(--color-t
 
 /* ====== PROGRESS BAR ====== */
 #progress-bar{position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;align-items:center}
-#progress-bar .pb-track{width:1px;background:oklch(86% 0.10 85 / .12);border-radius:1px}
+#progress-bar .pb-track{width:1px;background:rgba(36,88,223,.12);border-radius:1px}
 #progress-bar .pb-segments{display:flex;flex-direction:column;position:absolute;inset:0}
 #progress-bar .pb-seg{flex:1;cursor:pointer;position:relative;background:transparent;border:none;outline:none;transition:background .35s var(--ease-out)}
 #progress-bar .pb-seg.active{background:var(--color-accent);box-shadow:0 0 10px var(--color-accent-glow)}
@@ -73,12 +71,12 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
 .step-desc{color:var(--color-text-dim);font-size:1rem;line-height:1.75}
 
 /* ====== BUTTONS ====== */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 26px;font-family:var(--font-display);font-weight:600;font-size:.9rem;background:var(--color-accent);color:oklch(24% 0.08 252);border:none;border-radius:var(--radius-sm);cursor:pointer;transition:transform .2s var(--ease-out),box-shadow .2s var(--ease-out)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 26px;font-family:var(--font-display);font-weight:600;font-size:.9rem;background:var(--color-accent);color:rgba(255,255,255,1);border:none;border-radius:var(--radius-sm);cursor:pointer;transition:transform .2s var(--ease-out),box-shadow .2s var(--ease-out)}
 .btn:hover{transform:translateY(-2px);box-shadow:0 4px 28px var(--color-accent-glow)}
 .btn:active{transform:translateY(0)}
 .btn:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
 .btn.outline{background:transparent;border:1.5px solid var(--color-accent);color:var(--color-accent)}
-.btn.outline:hover{background:oklch(82% 0.16 86 / .08)}
+.btn.outline:hover{background:rgba(36,88,223,.08)}
 .btn.danger{background:var(--color-danger);color:#fff}
 .btn:disabled{opacity:.35;pointer-events:none}
 
@@ -103,13 +101,13 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
   background:var(--color-surface);border:2px solid var(--color-success);
   transition:border-color .5s,background .5s,box-shadow .5s;
 }
-.general.traitor{border-color:var(--color-danger);background:oklch(60% 0.15 22 / .06);box-shadow:0 0 16px oklch(60% 0.15 22 / .25)}
+.general.traitor{border-color:var(--color-danger);background:rgba(181,57,47,.06);box-shadow:0 0 16px rgba(181,57,47,.25)}
 .general .gicon{font-size:2rem;display:block;margin-bottom:4px}
 .general .gname{font-size:.74rem;font-family:var(--font-display);font-weight:600;color:var(--color-text)}
 .general .grole{font-size:.64rem;color:var(--color-text-dim);margin-top:2px}
 .general .gbadge{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:10px;font-size:.64rem;font-family:var(--font-display);font-weight:600;transition:all .3s}
-.general:not(.traitor) .gbadge{color:var(--color-success);background:oklch(66% 0.12 155 / .12)}
-.general.traitor .gbadge{color:var(--color-danger);background:oklch(60% 0.15 22 / .12)}
+.general:not(.traitor) .gbadge{color:var(--color-success);background:rgba(36,114,88,.12)}
+.general.traitor .gbadge{color:var(--color-danger);background:rgba(181,57,47,.12)}
 
 /* Crash pulse rings */
 .crash-pulse{position:absolute;top:50%;left:50%;width:220px;height:220px;margin:-110px 0 0 -110px;border-radius:50%;border:2px solid var(--color-danger);z-index:2;pointer-events:none;opacity:0;transform:scale(0)}
@@ -122,7 +120,7 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
   position:absolute;top:50%;left:50%;z-index:3;pointer-events:none;
   padding:14px 30px;border:3px solid var(--color-danger);border-radius:10px;
   color:var(--color-danger);font-family:var(--font-display);font-weight:700;font-size:1.05rem;text-align:center;
-  background:oklch(60% 0.15 22 / .1);line-height:1.3;
+  background:rgba(181,57,47,.1);line-height:1.3;
   transform:translate(-50%,-50%) rotate(-12deg) scale(0);opacity:0;
 }
 .crash-stamp.active{animation:stampIn .5s var(--ease-out) forwards}
@@ -133,13 +131,13 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
 }
 
 /* Section red vignette on crash */
-#s1::after{content:'';position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 140px oklch(60% 0.15 22 / 0);transition:box-shadow .4s;z-index:0}
+#s1::after{content:'';position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 140px rgba(181,57,47,0);transition:box-shadow .4s;z-index:0}
 #s1.crash::after{animation:vignetteFlash .9s ease-in-out 2}
-@keyframes vignetteFlash{0%,100%{box-shadow:inset 0 0 140px oklch(60% 0.15 22 / 0)}50%{box-shadow:inset 0 0 140px oklch(60% 0.15 22 / .45)}}
+@keyframes vignetteFlash{0%,100%{box-shadow:inset 0 0 140px rgba(181,57,47,0)}50%{box-shadow:inset 0 0 140px rgba(181,57,47,.45)}}
 
 .generals-verdict{padding:14px 24px;border-radius:var(--radius-md);text-align:center;margin:16px auto;max-width:560px;font-family:var(--font-display);font-weight:600;font-size:.92rem;transition:all .4s}
-.generals-verdict.ok{border:1px solid var(--color-success);background:oklch(66% 0.12 155 / .08);color:var(--color-success)}
-.generals-verdict.fail{border:1px solid var(--color-danger);background:oklch(60% 0.15 22 / .06);color:var(--color-danger)}
+.generals-verdict.ok{border:1px solid var(--color-success);background:rgba(36,114,88,.08);color:var(--color-success)}
+.generals-verdict.fail{border:1px solid var(--color-danger);background:rgba(181,57,47,.06);color:var(--color-danger)}
 
 .slider-row{display:flex;align-items:center;gap:14px;margin:20px 0;flex-wrap:wrap}
 .slider-row label{font-family:var(--font-display);font-weight:600;font-size:.84rem;color:var(--color-text);white-space:nowrap}
@@ -151,14 +149,14 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
 /* ====== S2/S3: BLOCK CARD =================== */
 /* ============================================ */
 .block-card{background:var(--color-surface);border-radius:var(--radius-lg);padding:24px 28px;border:1.5px dashed var(--color-accent-dim);margin-bottom:20px;transition:border-color .5s,box-shadow .5s,border-style .5s}
-.block-card.confirmed{border-style:solid;border-color:var(--color-success);box-shadow:0 0 28px oklch(66% 0.12 155 / .22)}
-.block-card.rejected{border-style:solid;border-color:var(--color-danger);box-shadow:0 0 28px oklch(60% 0.15 22 / .22)}
+.block-card.confirmed{border-style:solid;border-color:var(--color-success);box-shadow:0 0 28px rgba(36,114,88,.22)}
+.block-card.rejected{border-style:solid;border-color:var(--color-danger);box-shadow:0 0 28px rgba(181,57,47,.22)}
 .bc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-card)}
 .bc-num{font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--color-accent)}
 .bc-status{padding:4px 14px;border-radius:12px;font-family:var(--font-display);font-weight:600;font-size:.76rem;transition:all .4s}
-.bc-status.pending{color:var(--color-warm);background:oklch(76% 0.14 65 / .1);border:1px solid oklch(76% 0.14 65 / .3)}
-.bc-status.confirmed{color:var(--color-success);background:oklch(66% 0.12 155 / .1);border:1px solid oklch(66% 0.12 155 / .3)}
-.bc-status.rejected{color:var(--color-danger);background:oklch(60% 0.15 22 / .08);border:1px solid oklch(60% 0.12 22 / .3)}
+.bc-status.pending{color:var(--color-warm);background:rgba(176,77,34,.1);border:1px solid rgba(176,77,34,.3)}
+.bc-status.confirmed{color:var(--color-success);background:rgba(36,114,88,.1);border:1px solid rgba(36,114,88,.3)}
+.bc-status.rejected{color:var(--color-danger);background:rgba(181,57,47,.08);border:1px solid rgba(181,57,47,.3)}
 .bc-row{display:flex;gap:12px;margin-bottom:8px;font-size:.86rem}
 .bcl{color:var(--color-text-dim);min-width:80px;flex-shrink:0}
 .bcv{color:var(--color-text)}
@@ -168,7 +166,7 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
 .bc-hash{font-family:var(--font-mono);font-size:.7rem;color:var(--color-text-dim);margin-top:2px;word-break:break-all}
 .bc-checks{display:flex;gap:8px;margin-top:14px}
 .bc-check{padding:4px 12px;border-radius:12px;font-size:.68rem;font-family:var(--font-display);font-weight:600;border:1px solid var(--border-subtle);color:var(--color-text-dim);transition:all .3s}
-.bc-check.done{border-color:var(--color-success);color:var(--color-success);background:oklch(66% 0.12 155 / .08)}
+.bc-check.done{border-color:var(--color-success);color:var(--color-success);background:rgba(36,114,88,.08)}
 .bc-check.done::before{content:'✓ '}
 
 /* ============================================ */
@@ -176,45 +174,45 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
 /* ============================================ */
 .pbft-flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:20px 0;flex-wrap:wrap}
 .pbft-phase{padding:14px 22px;border-radius:var(--radius-md);font-family:var(--font-display);font-weight:600;font-size:.82rem;text-align:center;transition:border-color .4s,background .4s,color .4s,box-shadow .4s;border:1.5px solid var(--border-card);background:var(--color-surface);color:var(--color-text-dim);min-width:110px}
-.pbft-phase.active{border-color:var(--color-accent);background:oklch(82% 0.16 86 / .08);color:var(--color-accent);box-shadow:0 0 22px oklch(82% 0.16 86 / .18)}
-.pbft-phase.done{border-color:var(--color-success);color:var(--color-success);background:oklch(66% 0.12 155 / .06)}
+.pbft-phase.active{border-color:var(--color-accent);background:rgba(36,88,223,.08);color:var(--color-accent);box-shadow:0 0 22px rgba(36,88,223,.18)}
+.pbft-phase.done{border-color:var(--color-success);color:var(--color-success);background:rgba(36,114,88,.06)}
 .pbft-arrow{color:var(--color-accent-dim);font-size:1.2rem;flex-shrink:0}
 
 /* Persistent 3-card phase explanation */
 .phase-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0}
 .phase-card{padding:18px 20px;background:var(--color-surface);border-radius:var(--radius-md);border:1.5px solid var(--border-card);transition:border-color .45s,box-shadow .45s,background .45s;position:relative}
-.phase-card.active{border-color:var(--color-accent);box-shadow:0 0 24px oklch(82% 0.16 86 / .16);background:oklch(82% 0.16 86 / .04)}
+.phase-card.active{border-color:var(--color-accent);box-shadow:0 0 24px rgba(36,88,223,.16);background:rgba(36,88,223,.04)}
 .phase-card.done{border-color:var(--color-success)}
 .phase-card .pc-step{font-family:var(--font-mono);font-size:.66rem;color:var(--color-accent-dim);margin-bottom:4px}
 .phase-card .pc-title{font-family:var(--font-display);font-weight:600;font-size:.9rem;color:var(--color-accent);margin-bottom:10px;line-height:1.3}
 .phase-card .pc-body{font-size:.8rem;color:var(--color-text-dim);line-height:1.75}
 .phase-card .pc-body strong{color:var(--color-text)}
 .phase-card .pc-role{display:inline-block;margin-top:10px;padding:3px 10px;border-radius:8px;font-size:.66rem;font-family:var(--font-display);font-weight:600;background:var(--color-surface2);color:var(--color-text-dim)}
-.phase-card.active .pc-role{background:oklch(82% 0.16 86 / .12);color:var(--color-accent)}
-.phase-card.done .pc-role{background:oklch(66% 0.12 155 / .1);color:var(--color-success)}
+.phase-card.active .pc-role{background:rgba(36,88,223,.12);color:var(--color-accent)}
+.phase-card.done .pc-role{background:rgba(36,114,88,.1);color:var(--color-success)}
 .phase-card .pc-check{position:absolute;top:14px;right:16px;font-size:1rem;color:var(--color-success);opacity:0;transform:scale(0);transition:opacity .35s,transform .35s var(--ease-out)}
 .phase-card.done .pc-check{opacity:1;transform:scale(1)}
 
 .vote-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:24px 0}
 .vote-card{position:relative;padding:18px 10px 14px;background:var(--color-surface);border-radius:var(--radius-md);text-align:center;border:1.5px solid var(--border-card);transition:border-color .4s,background .4s,box-shadow .4s}
-.vote-card.voted-yes{border-color:var(--color-success);box-shadow:0 0 16px oklch(66% 0.12 155 / .2)}
-.vote-card.voted-no{border-color:var(--color-danger);box-shadow:0 0 16px oklch(60% 0.15 22 / .2)}
+.vote-card.voted-yes{border-color:var(--color-success);box-shadow:0 0 16px rgba(36,114,88,.2)}
+.vote-card.voted-no{border-color:var(--color-danger);box-shadow:0 0 16px rgba(181,57,47,.2)}
 .vote-card.broadcasting{animation:broadcastPulse .7s var(--ease-out)}
-@keyframes broadcastPulse{0%{box-shadow:0 0 0 0 oklch(82% 0.16 86 / .45)}100%{box-shadow:0 0 0 18px oklch(82% 0.16 86 / 0)}}
+@keyframes broadcastPulse{0%{box-shadow:0 0 0 0 rgba(36,88,223,.45)}100%{box-shadow:0 0 0 18px rgba(36,88,223,0)}}
 .vote-card .vicon{font-size:1.6rem;display:block;margin-bottom:4px}
 .vote-card .vname{font-size:.72rem;font-family:var(--font-display);font-weight:600;color:var(--color-text)}
 .vote-card .vvote{font-size:.66rem;font-weight:600;margin-top:6px;min-height:18px;line-height:1.4}
-.vote-card .vprimary{position:absolute;top:-9px;left:50%;transform:translateX(-50%);padding:2px 8px;border-radius:8px;font-size:.58rem;font-family:var(--font-display);font-weight:600;color:oklch(24% 0.08 252);background:var(--color-accent);white-space:nowrap}
+.vote-card .vprimary{position:absolute;top:-9px;left:50%;transform:translateX(-50%);padding:2px 8px;border-radius:8px;font-size:.58rem;font-family:var(--font-display);font-weight:600;color:rgba(255,255,255,1);background:var(--color-accent);white-space:nowrap}
 
 .result-bar{padding:16px 24px;border-radius:var(--radius-md);text-align:center;font-family:var(--font-display);font-weight:600;font-size:.92rem;margin-top:20px}
-.result-bar.pass{border:1px solid var(--color-success);background:oklch(66% 0.12 155 / .08);color:var(--color-success)}
-.result-bar.reject{border:1px solid var(--color-danger);background:oklch(60% 0.15 22 / .06);color:var(--color-danger)}
+.result-bar.pass{border:1px solid var(--color-success);background:rgba(36,114,88,.08);color:var(--color-success)}
+.result-bar.reject{border:1px solid var(--color-danger);background:rgba(181,57,47,.06);color:var(--color-danger)}
 
 /* ====== S3: MALICIOUS ====== */
 .node-toggle-grid{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0;align-items:center}
 .node-toggle{padding:8px 16px;background:var(--color-surface);border:1px solid var(--border-card);border-radius:var(--radius-sm);cursor:pointer;font-size:.82rem;font-family:var(--font-body);color:var(--color-text);transition:border-color .3s,background .3s,color .3s}
 .node-toggle:hover{border-color:var(--color-warm)}
-.node-toggle.rogue{border-color:var(--color-danger);background:oklch(60% 0.15 22 / .12);color:var(--color-danger)}
+.node-toggle.rogue{border-color:var(--color-danger);background:rgba(181,57,47,.12);color:var(--color-danger)}
 
 .info-card{padding:16px 20px;background:var(--color-surface);border-radius:var(--radius-md);border:1px solid var(--border-card);margin:16px 0}
 .info-card p{color:var(--color-text-dim);font-size:.85rem;line-height:1.8}
@@ -225,7 +223,7 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
 .compare-table td{padding:12px 16px;font-size:.84rem;color:var(--color-text-dim);border-bottom:1px solid var(--border-subtle);vertical-align:top}
 .compare-table tr:last-child td{border-bottom:none}
 .compare-table td:first-child{font-family:var(--font-display);font-weight:600;color:var(--color-text)}
-.compare-table tr.hl td{background:oklch(82% 0.16 86 / .06)}
+.compare-table tr.hl td{background:rgba(36,88,223,.06)}
 .compare-table tr.hl td:first-child,.compare-table tr.hl td.hl{color:var(--color-accent)}
 
 /* ====== RESPONSIVE ====== */
@@ -242,13 +240,11 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
   #top-nav{padding:10px 16px}
 }
 </style>
+<link rel="stylesheet" href="../assets/css/legacy-demo.css">
 </head>
-<body>
+<body class="legacy-demo">
 
-<div id="top-nav">
-  <a href="blockchain-presentation.html#s12">← 返回演示</a>
-  <span>共识机制 · PBFT</span>
-</div>
+<nav id="top-nav" aria-label="页面导航"><a class="brand" href="../index.html"><span class="brand-mark">▦</span>区块链学习实验室</a><a class="legacy-back" href="blockchain-presentation.html">返回分享文稿 →</a></nav>
 
 <nav id="progress-bar" aria-label="步骤进度"></nav>
 
@@ -257,9 +253,10 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
 <!-- ====== S1: BYZANTINE GENERALS ====== -->
 <section class="section" id="s1">
   <div class="section-inner">
+<aside class="legacy-note"><strong>投票流程图解（历史模型）</strong><p>滑块和投票是预设动画，没有实现 PBFT 的认证消息、视图切换或完整安全证明；阈值内也不等于业务事实真实，超过模型边界不代表必然崩溃。请勿据此判断真实协议安全。</p><a href="network-lab.html">PoW 分叉与重组实验 →</a></aside>
     <div class="reveal-up"><p class="section-label">Step 1</p></div>
     <h2 class="reveal-up">拜占庭将军问题</h2>
-    <p class="step-desc reveal-up">页岩气开发项目中有<strong style="color:var(--color-accent)">5 个参与方</strong>协同作业。如果其中有人故意传递假消息（篡改数据、谎报进度），系统还能达成一致吗？<br>PBFT 的答案：只要叛徒数量 &lt; 总节点数的 1/3，系统就安全；一旦超过，共识崩溃。</p>
+    <p class="step-desc reveal-up">页岩气开发项目中有<strong style="color:var(--color-accent)">5 个参与方</strong>协同作业。如果其中有人故意传递假消息（篡改数据、谎报进度），系统还能达成一致吗？<br>本动画的设定：本页将 1 个作恶节点作为示意分界；超过分界只表示模型假设不满足，不能据此断言真实 PBFT 一定崩溃。</p>
 
     <div class="generals-ring reveal-up">
       <div class="consensus-line" id="consensusLine"></div>
@@ -269,13 +266,13 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
       <div class="crash-stamp" id="crashStamp">共识失败<br>CONSENSUS LOST</div>
     </div>
 
-    <div class="generals-verdict ok reveal-up" id="verdict">✅ 叛徒 0/5 · 系统安全 · 所有忠诚节点达成一致</div>
+    <div class="generals-verdict ok reveal-up" id="verdict">✅ 叛徒 0/5 · 处于示意范围 · 所有动画展示一致</div>
 
     <div class="slider-row reveal-up">
       <label>拖动增加叛徒数量：</label>
       <input type="range" id="traitorSlider" min="0" max="3" value="0" oninput="updateTraitors(this.value)" onchange="this.blur()">
       <span class="slider-val" id="traitorCount">0</span>
-      <span style="font-size:.78rem;color:var(--color-text-dim)" id="traitorNote">（少于 2 个安全）</span>
+      <span style="font-size:.78rem;color:var(--color-text-dim)" id="traitorNote">（示意分界：1 个）</span>
     </div>
   </div>
 </section>
@@ -285,7 +282,7 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
   <div class="section-inner">
     <div class="reveal-up"><p class="section-label">Step 2</p></div>
     <h2 class="reveal-up">PBFT 三阶段投票</h2>
-    <p class="step-desc reveal-up">一笔页岩气作业交易要上链，PBFT 走三个阶段：<strong style="color:var(--color-accent)">Pre-Prepare → Prepare → Commit</strong>。每个阶段都需要 ≥ 2/3 节点同意才推进，最终交易不可逆转。</p>
+    <p class="step-desc reveal-up">一笔页岩气作业交易要上链，PBFT 走三个阶段：<strong style="color:var(--color-accent)">Pre-Prepare → Prepare → Commit</strong>。这里依次播放三个阶段名称，没有实现每阶段的消息与证书校验；动画结束不代表真实网络确认或最终性。</p>
 
     <!-- Block preview card -->
     <div class="block-card reveal-up" id="blockCard">
@@ -338,8 +335,8 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
         <span class="pc-check">✓</span>
         <div class="pc-step">阶段 3</div>
         <div class="pc-title">Commit · 提交</div>
-        <div class="pc-body">进入「已准备」的节点再向所有人广播 Commit 消息。收集到 ≥ 2/3 的 Commit 后，交易达到<strong>最终性</strong>——即使主节点此刻宕机，交易也不会回滚。<br><strong>作用</strong>：保证结果不可逆转。</div>
-        <div class="pc-role" id="prole-2">达成不可逆共识</div>
+        <div class="pc-body">进入「已准备」的节点再向所有人广播 Commit 消息。收集到 ≥ 2/3 的 Commit 后，本页播放确认状态；没有实现真正的提交证书或故障恢复。<br><strong>作用</strong>：展示阶段名称，不证明真实最终性。</div>
+        <div class="pc-role" id="prole-2">显示示例确认状态</div>
       </div>
     </div>
 
@@ -356,7 +353,7 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
   <div class="section-inner">
     <div class="reveal-up"><p class="section-label">Step 3</p></div>
     <h2 class="reveal-up">作恶节点被拒绝</h2>
-    <p class="step-desc reveal-up">如果有人故意投反对票或篡改数据，PBFT 的容错公式 <strong style="color:var(--color-accent)">N ≥ 3f + 1</strong> 保证：5 个节点最多容忍 1 个作恶。超过 1 个，交易被驳回——区块链不会接受可疑数据。</p>
+    <p class="step-desc reveal-up">如果有人故意投反对票或篡改数据，这里将 5 个节点中的 4 票作为动画通过门槛，作恶开关被简化为投反对票。这不是完整的 PBFT 验证，也不能判断报告是否真实。</p>
 
     <div class="node-toggle-grid reveal-up" id="rogueToggles"></div>
 
@@ -375,32 +372,10 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,2.4vw,
   <div class="section-inner">
     <div class="reveal-up"><p class="section-label">Step 4</p></div>
     <h2 class="reveal-up">共识机制对比</h2>
-    <p class="step-desc reveal-up">不同类型的区块链采用不同共识。在已知多方协作的工业场景中——能源开发、装备制造、跨境贸易——节点身份明确、对吞吐量和能耗敏感，<strong style="color:var(--color-accent)">PBFT 是工程实践中的主流共识算法</strong>。</p>
+    <p class="step-desc reveal-up">不同类型的区块链采用不同共识。在已知多方协作的工业场景中——能源开发、装备制造、跨境贸易——节点身份明确、对吞吐量和能耗敏感，<strong style="color:var(--color-accent)">必须按具体系统评估协议、身份与治理</strong>。</p>
 
-    <div class="reveal-up" style="overflow-x:auto">
-      <table class="compare-table">
-        <thead><tr><th>特征</th><th>PoW（工作量证明）</th><th>PoS（权益证明）</th><th class="hl">PBFT（实用拜占庭容错）</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>速度</td><td>7 TPS</td><td>~100 TPS</td><td class="hl">数千 TPS</td>
-          </tr>
-          <tr>
-            <td>年能耗</td><td>≈ 阿根廷全国用电</td><td>≈ 一个小镇</td><td class="hl">≈ 一台服务器</td>
-          </tr>
-          <tr>
-            <td>节点身份</td><td>匿名，任何人可加入</td><td>匿名，需质押代币</td><td class="hl">已知，需授权许可</td>
-          </tr>
-          <tr>
-            <td>容错率</td><td>需 &gt;50% 诚实算力</td><td>需 &gt;2/3 诚实质押</td><td class="hl">≥ 2/3 诚实节点（N≥3f+1）</td>
-          </tr>
-          <tr>
-            <td>典型项目</td><td>Bitcoin</td><td>Ethereum 2.0</td><td class="hl">Hyperledger Fabric · 蚂蚁链 · 长安链</td>
-          </tr>
-          <tr class="hl">
-            <td>适用场景</td><td>公链 · 数字货币</td><td>公链 · DeFi</td><td class="hl">联盟链 · 工业协同 · 政务存证</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="reveal-up compare-table-wrap" style="overflow-x:auto">
+      <table class="compare-table"><thead><tr><th>要比较的项目</th><th>需要说明的条件</th></tr></thead><tbody><tr><td>性能与资源</td><td>实现版本、硬件、节点数量、交易类型和测量口径</td></tr><tr><td>确认与最终性</td><td>具体协议、消息认证、网络时序及故障假设</td></tr><tr><td>成员与治理</td><td>准入方式、密钥管理、权限与退出安排</td></tr></tbody></table>
     </div>
   </div>
 </section>
@@ -432,8 +407,8 @@ function renderGenerals(traitorCount,crash){
   nodes.forEach(function(n,i){
     var isTraitor=traitors.has(i);
     var badgeText;
-    if(isTraitor){badgeText=crash?'✓ 作恶成功':'⚠ 叛徒';}
-    else{badgeText=crash?'⚠ 无法共识':'✅ 忠诚';}
+    if(isTraitor){badgeText=crash?'⚠ 超出示意边界':'⚠ 叛徒';}
+    else{badgeText=crash?'⚠ 未证明安全':'✅ 忠诚';}
     row.innerHTML+=
       '<div class="general'+(isTraitor?' traitor':'')+'">'+
         '<span class="gicon">'+n.icon+'</span>'+
@@ -467,8 +442,8 @@ function updateTraitors(val){
     pulse2.classList.remove('active');
     stamp.classList.remove('active');
     verdict.className='generals-verdict ok';
-    verdict.innerHTML='✅ 叛徒 '+val+'/'+nodes.length+' · 系统安全 · 忠诚节点达成一致（'+(nodes.length-val)+'/'+nodes.length+' ≥ 2/3）';
-    note.textContent='（≤'+safeLimit+' 个安全）';
+    verdict.innerHTML='✅ 叛徒 '+val+'/'+nodes.length+' · 处于示意范围 · 动画展示一致（'+(nodes.length-val)+'/'+nodes.length+' ≥ 2/3）';
+    note.textContent='（≤'+safeLimit+' 个：示意范围）';
   }else{
     s1.classList.add('crash');
     line.classList.add('broken');
@@ -478,8 +453,8 @@ function updateTraitors(val){
     pulse2.classList.remove('active');void pulse2.offsetWidth;pulse2.classList.add('active');
     stamp.classList.remove('active');void stamp.offsetWidth;stamp.classList.add('active');
     verdict.className='generals-verdict fail';
-    verdict.innerHTML='❌ 叛徒 '+val+'/'+nodes.length+' · 系统崩溃 · 无法达成 2/3 共识（仅 '+(nodes.length-val)+'/'+nodes.length+' 同意）';
-    note.textContent='（超过'+safeLimit+' 个即不安全！）';
+    verdict.innerHTML='❌ 叛徒 '+val+'/'+nodes.length+' · 超出示意范围 · 不满足动画门槛（仅 '+(nodes.length-val)+'/'+nodes.length+' 同意）';
+    note.textContent='（超过'+safeLimit+' 个：不作安全推断）';
   }
 }
 
@@ -510,7 +485,7 @@ function setBlockState(cardId,statusId,checksId,state){
     st.className='bc-status pending';st.textContent='待上链';
   }else if(state==='confirmed'){
     card.classList.add('confirmed');
-    st.className='bc-status confirmed';st.textContent='✅ 已上链';
+    st.className='bc-status confirmed';st.textContent='✅ 示例确认';
     document.querySelectorAll('#'+checksId+' .bc-check').forEach(function(c){c.classList.add('done')});
   }else if(state==='rejected'){
     card.classList.add('rejected');
@@ -606,7 +581,7 @@ function showResult(gridId,resultId,yesCount){
   var threshold=Math.ceil(nodes.length*2/3);
   if(yesCount>=threshold){
     result.className='result-bar pass';
-    result.innerHTML='✅ 投票通过 · '+yesCount+'/'+nodes.length+' 同意（≥ 2/3）· 交易上链确认';
+    result.innerHTML='✅ 投票通过 · '+yesCount+'/'+nodes.length+' 同意（≥ 2/3）· 动画完成（未实际联网）';
   }else{
     result.className='result-bar reject';
     result.innerHTML='❌ 投票被拒 · 仅 '+yesCount+'/'+nodes.length+' 同意（&lt; 2/3）· 交易驳回';
@@ -669,12 +644,12 @@ function startPBFT2(){
 
     if(yesCount>=threshold){
       result.className='result-bar pass';
-      result.innerHTML='✅ 投票通过 · '+yesCount+'/'+nodes.length+' 同意（≥ 2/3）· 容错公式 N≥3f+1 满足';
-      info.innerHTML='<p><strong style="color:var(--color-success)">作恶失败：</strong>仅有 '+rogueCount+' 个叛徒（≤ '+safeLimit+'），系统依然达成共识。这就是 PBFT 的容错能力——少数作恶者无法阻止合法交易上链。</p>';
+      result.innerHTML='✅ 投票通过 · '+yesCount+'/'+nodes.length+' 同意（≥ 2/3）· 达到本页动画门槛';
+      info.innerHTML='<p><strong style="color:var(--color-success)">作恶失败：</strong>仅有 '+rogueCount+' 个叛徒（≤ '+safeLimit+'），系统依然达成共识。这只是预设门槛下的动画结果；没有验证 PBFT 的容错性质。</p>';
     }else{
       result.className='result-bar reject';
       result.innerHTML='❌ 投票被拒 · 仅 '+yesCount+'/'+nodes.length+' 同意（&lt; 2/3）· 超过容错上限 '+safeLimit+' 个叛徒';
-      info.innerHTML='<p><strong style="color:var(--color-danger)">作恶阻止了交易——但这也是设计目标：</strong>'+rogueCount+' 个叛徒（&gt; '+safeLimit+'），共识无法达成，交易被正常驳回。区块链不会接受可疑数据，宁可拒绝也不让脏数据上链。</p>';
+      info.innerHTML='<p><strong style="color:var(--color-danger)">作恶阻止了交易——但这也是设计目标：</strong>'+rogueCount+' 个叛徒（&gt; '+safeLimit+'），共识无法达成，交易被正常驳回。本页只判断预设票数，不核验业务数据，也没有实现协议安全证明。</p>';
     }
     btn.disabled=false;btn.textContent='🗳️ 重新投票';
     btn.blur();
@@ -715,7 +690,7 @@ init();
   var labels=['拜占庭将军','PBFT投票','作恶节点','共识对比'];
   for(var i=0;i<total;i++){
     var seg=document.createElement('button');seg.className='pb-seg';seg.style.height=segH+'px';
-    seg.title=labels[i];seg.addEventListener('click',(function(j){return function(){secs[j].scrollIntoView({behavior:'smooth'})}})(i));
+    seg.title=labels[i];seg.addEventListener('click',(function(j){return function(){secs[j].scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})}})(i));
     var lbl=document.createElement('span');lbl.className='pb-label';lbl.textContent=labels[i];seg.appendChild(lbl);
     wrap.appendChild(seg);
   }
@@ -749,10 +724,10 @@ init();
   }
   document.addEventListener('keydown',function(e){
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){
-      if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
+      if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey||e.target.closest('input,textarea,select,button,a,summary,[contenteditable]'))return;
       e.preventDefault();var cur=curIdx();
       var tgt=e.key==='ArrowDown'?Math.min(cur+1,secs.length-1):Math.max(cur-1,0);
-      secs[tgt].scrollIntoView({behavior:'smooth'});
+      secs[tgt].scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
     }
   });
 })();
