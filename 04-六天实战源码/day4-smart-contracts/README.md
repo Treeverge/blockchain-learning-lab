@@ -10,12 +10,25 @@
 
 | 文件                    | 内容与边界                                                                     |
 | ----------------------- | ------------------------------------------------------------------------------ |
-| `01-utxo-vs-account.py` | 原UTXO / 账户对比脚本，保留进一步阅读，尚未全面重写                            |
+| `01-utxo-vs-account.py` | 零依赖账本对比：同一笔45单位付款、UTXO重复花费拒绝与账户nonce重放拒绝             |
 | `02-my-token.sol`       | 18位精度的教学Token，包含转账、授权、受部署者控制的mint与自助burn              |
 | `03-storage-demo.sol`   | memory / storage / calldata、数组与事件；已校订费用与持久性的注释              |
 | `04-execution-lab.sol`  | 最小回滚实验；memory返回、storage写入、先修改余额 / counter / 日志再主动revert |
 
 MyToken 的构造函数已修复 `_deployer` 初始化，否则 solc 0.8.20 无法编译；mint 增加零地址检查。这是教学代码，不是经过安全审计的发行方案。
+
+## 先运行 Python 对比
+
+在项目根目录执行：
+
+```powershell
+python -X utf8 "04-六天实战源码/day4-smart-contracts/01-utxo-vs-account.py"
+python -X utf8 -m unittest discover -s tests -p "test_day4_source.py"
+```
+
+两种账本都从 Alice 100、Bob 50 开始；Alice 付45后变为55与95。UTXO模型消费整枚70单位输出，生成45单位收款与25单位找零；账户模型直接更新余额，Alice 的nonce从0到1。再次引用旧输出或旧nonce都被拒绝，失败后状态不变。试着在源码副本里把付款改成71，先预测哪条校验会拦截。
+
+这里的所有者只是可信字符串，没有验证私钥；单位不代表真实BTC/ETH，费用设为零，也未模拟脚本、合约存储、交易池、共识或重组。UTXO可附带脚本花费条件，不能概括为“只能记余额”；账户是否拥有通用可变存储，取决于账户与合约执行模型。更多真实签名与双花校验见[Day 3](../day3-signatures-utxo/README.md)，账户纳入后失败的nonce、Gas和回滚见本章网页与 `04-execution-lab.sol`。可对照[Bitcoin交易开发指南](https://developer.bitcoin.org/devguide/transactions.html)和[Ethereum账户说明](https://ethereum.org/en/developers/docs/accounts/)。
 
 ## 在 Remix VM 运行
 
@@ -44,4 +57,4 @@ $env:NODE_PATH = Join-Path $accountTools 'node_modules'
 node tests/account-solidity-check.cjs
 ```
 
-VM检查真实回滚后的余额 / counter / 日志、发送者nonce与手续费，以及Token的mint权限和授权消耗。不会连接真实网络。网页定额和实际VM Gas不要求相同；双方验证的是状态边界。
+VM检查三个Solidity文件编译，并核对真实回滚后的余额 / counter / 日志、发送者nonce与手续费，以及Token的mint权限和授权消耗。不会连接真实网络。网页定额和实际VM Gas不要求相同；双方验证的是状态边界。

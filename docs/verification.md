@@ -132,3 +132,9 @@ Node.js 24 下 Ganache 的原生 µWS 扩展可能不可用，工具会退回 Ja
 ## 遗留图片清理（2026-10-17）
 
 - `assets/picture/` 与 `03-演示文稿/picture/` 各有四张相同哈希的旧 JPEG；全仓库 HTML、CSS、JS、Markdown 无引用，生成的 DOCX 也没有内嵌媒体。删除这八个未使用文件后，页面图像来源只剩 `docs/screenshots/` 的本地界面截图。公开仓库的旧提交历史仍可能保留此前文件。
+
+## Day 4 原始源码校订（2026-10-17）
+
+- `01-utxo-vs-account.py` 从直接改字典改为先校验再提交的最小账本，展示同一笔45单位付款在UTXO与账户模型中的状态变化、已花费输入与旧nonce重放拒绝。4项新测试检查失败不改变余额、nonce或可用输出，Python总计40项。
+- 原脚本“UTXO天然防双花”“UTXO只能记余额”的绝对表述已修正：教学字典只代表当前本地状态，真实交易还需签名、脚本、共识；UTXO可携带花费条件。`03-storage-demo.sol` 也明确区分原生ETH账户余额与代币合约余额。
+- 本章三个Solidity文件由solc 0.8.20编译并在本地VM检查核心转账、授权、memory/storage与回滚；短Python脚本不声称模拟EVM、Gas或链重组。

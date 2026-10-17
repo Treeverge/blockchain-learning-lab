@@ -1,153 +1,101 @@
-"""
-======================================================================
-Day 4 — 从比特币到以太坊：理解"世界计算机"
-======================================================================
+"""Day 4: 用同一笔 45 单位付款比较 UTXO 与账户状态。
 
-第一天你要理解一个核心转换：
-  比特币 = UTXO + 脚本（存钱、花钱、验签）
-  以太坊 = 账户模型 + 智能合约（存钱、花钱、跑程序）
-
-
-====================================
-核心区别：UTXO vs 账户模型
-====================================
-
-比特币的 UTXO 你已经理解了：
-  钱是一堆"硬币"（UTXO），你花一枚整枚毁掉，找零回来一枚新的。
-  这跟现金一样——你钱包里是一张张钞票，不是余额数字。
-
-以太坊是账户模型：
-  每个地址就是一个账户，有余额，转账就是加减法。
-  跟银行一样——你的账户余额 100，转 20 给别人，余额变 80。
-
-两者的直观对比：
-                                        ┌──────────────────┐
-  比特币                        │ UTXO集合         │
-  Alice's UTXOs:                │ (tx0,#0):30→Alice│
-    UTXO1: 30 BTC               │ (tx0,#1):70→Alice│
-    UTXO2: 70 BTC               │ (tx1,#0):50→Bob  │
-  总余额: 100 BTC（自己算的）    │                  │
-                                └──────────────────┘
-
-                                        ┌──────────────────┐
-  以太坊                        │ 全局状态树        │
-  Alice.balance: 100 ETH        │ Alice: 100       │
-  Bob.balance:   50 ETH         │ Bob:   50        │
-                                │ ...              │
-                                └──────────────────┘
-
-====================================
-最关键的区别：两类账户
-====================================
-
-以太坊有两种账户，这是它跟比特币最大的不同：
-
-  1. 外部账户 (EOA) — 就是你
-     只有余额 + nonce
-     由私钥控制（跟比特币一样）
-     只能发起交易
-
-  2. 合约账户 — 就是一段代码
-     有余额 + 代码 + 存储空间
-     没有私钥！不能被"拥有"
-     收到交易时，自动执行代码
-
-这就是"世界计算机"：
-  你发起一笔交易 → 这交易不是"转钱"而是"调用合约里的函数"
-  → 合约代码在以太坊的每个节点上执行 → 结果改变全局状态
-
-
-====================================
-一个故事帮你记住
-====================================
-
-比特币 ≈ 黄金
-  你有一块金条（UTXO）
-  你把它切成两块（花 UTXO = 毁旧 + 造新 UTXO）
-
-以太坊 ≈ 自动贩卖机
-  你投币（发交易 + ETH）
-  机器执行代码 → 自动出结果
-  机器里能存状态（比如"谁投了多少钱"）
-
-以太坊的名字由来：Ethereum = Ether（以太，一种假想的介质）+ eum（空间）
-→ "所有节点共同运行的大计算机"
+这是纯 Python 的最小账本：单位没有真实币值，身份是可信的字符串。
+未模拟签名、交易序列化、手续费、Gas、网络共识或链重组。
+真实签名与 UTXO 校验见 Day 3，账户执行回滚见本章网页与 Solidity 实验。
 """
 
-print("=" * 60)
-print("Day 4-1: UTXO vs 账户模型")
-print("=" * 60)
 
-# ============================================================
-# UTXO 转账（比特币）
-# ============================================================
-print("\n=== 比特币 UTXO 转账 ===")
-
-# 初始状态：两枚硬币
-utxo1 = {"id": "tx0#0", "amount": 70, "owner": "Alice", "exists": True}
-utxo2 = {"id": "tx0#1", "amount": 30, "owner": "Alice", "exists": True}
-utxo3 = {"id": "tx1#0", "amount": 50, "owner": "Bob", "exists": True}
-
-utxos = [utxo1, utxo2, utxo3]
-
-def utxo_balance(who):
-    return sum(u["amount"] for u in utxos if u["owner"] == who and u["exists"])
-
-print(f"  初始 UTXO 集合: {[(u['id'], u['amount']) for u in utxos if u['exists']]}")
-print(f"  Alice = {utxo_balance('Alice')}, Bob = {utxo_balance('Bob')}")
-
-# Alice 给 Bob 转 45
-# 步骤: 找一枚够 45 的硬币 → 整个花掉 → 创建两枚新硬币
-to_spend = utxo1  # 70 BTC 那枚
-to_spend["exists"] = False
-new_utxo_for_bob = {"id": "tx2#0", "amount": 45, "owner": "Bob", "exists": True}
-new_utxo_for_alice = {"id": "tx2#1", "amount": 25, "owner": "Alice", "exists": True}
-utxos.extend([new_utxo_for_bob, new_utxo_for_alice])
-
-print(f"\n  Alice 花费 tx0#0 (70 BTC)")
-print(f"  创建 tx2#0 (45 → Bob), tx2#1 (25 → Alice 找零)")
-print(f"  剩余 UTXO: {[(u['id'], u['amount']) for u in utxos if u['exists']]}")
-print(f"  Alice = {utxo_balance('Alice')}, Bob = {utxo_balance('Bob')}")
+def create_utxo_ledger():
+    """键是输出 ID；只有仍可花费的输出留在集合中。"""
+    return {
+        "tx0#0": {"owner": "Alice", "amount": 70},
+        "tx0#1": {"owner": "Alice", "amount": 30},
+        "tx1#0": {"owner": "Bob", "amount": 50},
+    }
 
 
-# ============================================================
-# 账户模型转账（以太坊）
-# ============================================================
-print(f"\n=== 以太坊 账户模型转账 ===")
+def utxo_balance(ledger, owner):
+    return sum(output["amount"] for output in ledger.values()
+               if output["owner"] == owner)
 
-# 初始状态：一本大账本
-world_state = {
-    "Alice":   {"balance": 100, "nonce": 0},
-    "Bob":     {"balance": 50,  "nonce": 0},
-}
 
-print(f"  初始状态: Alice={world_state['Alice']['balance']}, "
-      f"Bob={world_state['Bob']['balance']}")
+def apply_utxo_payment(ledger, input_id, sender, recipient, amount, txid):
+    """先校验，再消费整个输入并创建收款与找零输出；本例手续费为零。"""
+    source = ledger.get(input_id)
+    if source is None:
+        raise ValueError("输入不存在或已花费")
+    if source["owner"] != sender:
+        raise ValueError("输入所有者不匹配")
+    if not isinstance(amount, int) or amount <= 0 or amount > source["amount"]:
+        raise ValueError("付款金额必须在可用输入范围内")
+    if not recipient or recipient == sender:
+        raise ValueError("本例要求不同的有效收款人")
+    payment_id, change_id = f"{txid}#0", f"{txid}#1"
+    if payment_id in ledger or change_id in ledger or input_id in (payment_id, change_id):
+        raise ValueError("新输出 ID 已存在")
 
-# Alice 给 Bob 转 45
-# 步骤: 直接修改
-world_state["Alice"]["balance"] -= 45
-world_state["Alice"]["nonce"] += 1
-world_state["Bob"]["balance"] += 45
+    change = source["amount"] - amount
+    del ledger[input_id]
+    ledger[payment_id] = {"owner": recipient, "amount": amount}
+    if change:
+        ledger[change_id] = {"owner": sender, "amount": change}
 
-print(f"  Alice 转 45 给 Bob")
-print(f"  直接修改状态!")
-print(f"  Alice={world_state['Alice']['balance']}, "
-      f"Bob={world_state['Bob']['balance']}")
 
-# ============================================================
-# 总结
-# ============================================================
-print(f"\n=== 总结 ===")
-print(f"""
-  UTXO: 转账 → 毁硬币 + 造新硬币 → 多枚硬币 -> 找零是必须的
-  账户: 转账 → 读余额 → 减余额 → 加余额 → 不需要找零
+def create_account_ledger():
+    return {
+        "Alice": {"balance": 100, "nonce": 0},
+        "Bob": {"balance": 50, "nonce": 0},
+    }
 
-  这决定了两个重要的不同:
-  1. UTXO 天然防双花（花过的硬币不存在了）
-     账户模型需要 nonce 防重放（每笔交易一个递增序号）
 
-  2. UTXO 不能"存状态"（只能记"谁拥有多少钱"）
-     账户模型可以（合约账户有存储空间，能记任意数据）
-     → 这就是智能合约能做的事！
-""")
+def apply_account_payment(accounts, sender, recipient, amount, nonce):
+    """比较期望 nonce 与余额后提交；这里没有手续费或执行失败。"""
+    if sender not in accounts or recipient not in accounts or sender == recipient:
+        raise ValueError("本例要求两个不同的现有账户")
+    source = accounts[sender]
+    if nonce != source["nonce"]:
+        raise ValueError("nonce 不匹配，旧交易不能重放")
+    if not isinstance(amount, int) or amount <= 0 or amount > source["balance"]:
+        raise ValueError("金额无效或余额不足")
+
+    source["balance"] -= amount
+    source["nonce"] += 1
+    accounts[recipient]["balance"] += amount
+
+
+def run_demo():
+    print("=" * 60)
+    print("Day 4-1: UTXO vs 账户模型")
+    print("=" * 60)
+
+    utxos = create_utxo_ledger()
+    print("\n=== UTXO：整枚输入被消费，另建收款与找零 ===")
+    print(f"  初始 Alice={utxo_balance(utxos, 'Alice')}, Bob={utxo_balance(utxos, 'Bob')}")
+    apply_utxo_payment(utxos, "tx0#0", "Alice", "Bob", 45, "tx2")
+    print(f"  剩余可花费输出: {list(utxos.items())}")
+    print(f"  转账后 Alice={utxo_balance(utxos, 'Alice')}, Bob={utxo_balance(utxos, 'Bob')}")
+    try:
+        apply_utxo_payment(utxos, "tx0#0", "Alice", "Bob", 45, "tx3")
+    except ValueError as error:
+        print(f"  重复花费被拒绝：{error}")
+
+    accounts = create_account_ledger()
+    print("\n=== 账户：扣余额、加余额、递增发送者 nonce ===")
+    print(f"  初始 Alice={accounts['Alice']}, Bob={accounts['Bob']}")
+    apply_account_payment(accounts, "Alice", "Bob", 45, nonce=0)
+    print(f"  转账后 Alice={accounts['Alice']}, Bob={accounts['Bob']}")
+    try:
+        apply_account_payment(accounts, "Alice", "Bob", 45, nonce=0)
+    except ValueError as error:
+        print(f"  nonce 重放被拒绝：{error}")
+
+    print("\n=== 读懂边界 ===")
+    print("  两种账本都从总量 150 变为 Alice 55、Bob 95；有效性来自校验规则，不是数据结构自动保证。")
+    print("  UTXO 还可附带脚本条件；账户状态还可包含合约代码与持久存储。")
+    print("  未模拟签名、手续费、Gas 或网络：冲突交易可先被不同节点看到，最终结果要看有效链。")
+    print("  账户的已纳入执行失败可能消耗 Gas 并递增 nonce；本例只展示纳入前拒绝与成功付款。")
+
+
+if __name__ == "__main__":
+    run_demo()

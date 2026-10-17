@@ -53,7 +53,7 @@ DeFi 网页学习路径已串联：交换 → LP → 借贷。借贷实验从真
 | Day 1 | JavaScript 哈希、区块、挖矿 | 新增真实 SHA-256 哈希与选链网页；保留旧源码并注明模型差异                          |
 | Day 2 | Python 多节点、共识、分叉   | 三节点网页与无服务器 Python 重组练习已验证；原 Flask 源码保留作历史对照          |
 | Day 3 | 数字签名、UTXO、脚本        | 网页 ECDSA P-256；Python secp256k1 三段源码与边界测试已校订，旧 RSA 页面保留作对照 |
-| Day 4 | 账户模型、代币合约、存储    | 新增账户 / 合约执行网页；修复 Token 部署者初始化并验证 Solidity 回滚与授权         |
+| Day 4 | 账户模型、代币合约、存储    | 账户 / 合约执行网页；Python 对比已补双模型重放拒绝，三个 Solidity 文件已编译并做关键 VM 检查 |
 | Day 5 | AMM、DEX、借贷              | 交换、LP 与借贷网页实验；逐资产对账与清算坏账                                      |
 | Day 6 | 重入攻击、防御、工具链      | 新增重入网页与实际现金 / 债权对账；Python、Solidity 和失败传播已验证               |
 
@@ -91,6 +91,8 @@ python -X utf8 -m unittest discover -s tests -p "test_*.py"
 ```
 
 Day 3 的签名源码使用 `cryptography`；安装和四个独立检查步骤见 [Day 3 运行说明](04-六天实战源码/day3-signatures-utxo/README.md)。
+
+Day 4 的 [Python UTXO / 账户对比](04-六天实战源码/day4-smart-contracts/README.md)不需要额外依赖；同一笔付款后分别重放旧输出与旧 nonce，并核对账本保持不变。真实签名、Gas、合约存储和网络不由该短脚本模拟。
 
 Day 2 新增无需常驻服务器的 [Python 节点与重组练习](04-六天实战源码/day2-python-blockchain/README.md)。原 Flask 服务只作规则差异对照，默认监听本机。
 
