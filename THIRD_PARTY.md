@@ -16,6 +16,7 @@
 - 原作者：Daniel van Flymen。
 - 原 MIT 许可证位于 `04-六天实战源码/day2-python-blockchain/LICENSE`，保留 2017 年版权声明。
 - 原有 README 中的上游链接保留；扩展实验脚本与上游主体区分。
+- Day 2 的 `blockchain.py` 与 Dockerfile 对本地运行、输入错误和不可达同伴做了局部兼容修复；`requirements.txt` / `Pipfile` 仍保留上游旧版本，现代学习依赖另列在 `requirements-learning.txt`。`verified_network.py` 是本项目新增教学模型，不属于上游原始实现。
 
 ## 图片、商标与案例
 

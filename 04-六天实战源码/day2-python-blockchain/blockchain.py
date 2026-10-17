@@ -42,21 +42,22 @@ class Blockchain:
         :return: True if valid, False if not
         """
 
+        if not isinstance(chain, list) or not chain:
+            return False
+
         last_block = chain[0]
         current_index = 1
 
         while current_index < len(chain):
             block = chain[current_index]
-            print(f'{last_block}')
-            print(f'{block}')
-            print("\n-----------\n")
-            # Check that the hash of the block is correct
-            last_block_hash = self.hash(last_block)
-            if block['previous_hash'] != last_block_hash:
-                return False
-
-            # Check that the Proof of Work is correct
-            if not self.valid_proof(last_block['proof'], block['proof'], last_block_hash):
+            try:
+                # Check the previous link and simplified proof.
+                last_block_hash = self.hash(last_block)
+                if block['previous_hash'] != last_block_hash:
+                    return False
+                if not self.valid_proof(last_block['proof'], block['proof'], last_block_hash):
+                    return False
+            except (KeyError, TypeError, ValueError, IndexError):
                 return False
 
             last_block = block
@@ -80,16 +81,18 @@ class Blockchain:
 
         # Grab and verify the chains from all the nodes in our network
         for node in neighbours:
-            response = requests.get(f'http://{node}/chain')
+            try:
+                response = requests.get(f'http://{node}/chain', timeout=3)
+                if response.status_code != 200:
+                    continue
+                chain = response.json().get('chain')
+            except (requests.RequestException, ValueError, AttributeError):
+                continue
 
-            if response.status_code == 200:
-                length = response.json()['length']
-                chain = response.json()['chain']
-
-                # Check if the length is longer and the chain is valid
-                if length > max_length and self.valid_chain(chain):
-                    max_length = length
-                    new_chain = chain
+            # Use the actual candidate length, not an untrusted reported number.
+            if isinstance(chain, list) and len(chain) > max_length and self.valid_chain(chain):
+                max_length = len(chain)
+                new_chain = chain
 
         # Replace our chain if we discovered a new, valid chain longer than ours
         if new_chain:
@@ -231,11 +234,11 @@ def mine():
 
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():
-    values = request.get_json()
+    values = request.get_json(silent=True)
 
     # Check that the required fields are in the POST'ed data
     required = ['sender', 'recipient', 'amount']
-    if not all(k in values for k in required):
+    if not isinstance(values, dict) or not all(k in values for k in required):
         return 'Missing values', 400
 
     # Create a new Transaction
@@ -256,14 +259,19 @@ def full_chain():
 
 @app.route('/nodes/register', methods=['POST'])
 def register_nodes():
-    values = request.get_json()
+    values = request.get_json(silent=True)
 
-    nodes = values.get('nodes')
-    if nodes is None:
+    nodes = values.get('nodes') if isinstance(values, dict) else None
+    if not isinstance(nodes, list) or not all(isinstance(node, str) for node in nodes):
         return "Error: Please supply a valid list of nodes", 400
 
-    for node in nodes:
-        blockchain.register_node(node)
+    previous_nodes = set(blockchain.nodes)
+    try:
+        for node in nodes:
+            blockchain.register_node(node)
+    except ValueError:
+        blockchain.nodes = previous_nodes
+        return "Error: Please supply valid node addresses", 400
 
     response = {
         'message': 'New nodes have been added',
@@ -295,7 +303,8 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
+    parser.add_argument('--host', default='127.0.0.1', help='interface to listen on')
     args = parser.parse_args()
     port = args.port
 
-    app.run(host='0.0.0.0', port=port)
+    app.run(host=args.host, port=port)

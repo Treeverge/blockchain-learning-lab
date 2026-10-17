@@ -1,15 +1,14 @@
-FROM python:3.6-alpine
+FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install dependencies.
-ADD requirements.txt /app
-RUN cd /app && \
-    pip install -r requirements.txt
+# Use the maintained learning dependencies; original pins remain archived.
+COPY requirements-learning.txt /app/
+RUN python -m pip install --no-cache-dir -r requirements-learning.txt
 
 # Add actual source code.
-ADD blockchain.py /app
+COPY blockchain.py /app/
 
 EXPOSE 5000
 
-CMD ["python", "blockchain.py", "--port", "5000"]
+CMD ["python", "blockchain.py", "--host", "0.0.0.0", "--port", "5000"]

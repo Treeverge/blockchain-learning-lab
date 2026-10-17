@@ -6,9 +6,38 @@
 
 本地待确认池策略、交易有效性与选链是分开的检查。重组后，旧分支交易重新校验；有未花费输入的可恢复待确认，与新链冲突的丢弃。确认是当前选中链里的状态，不等于不可逆。
 
-边界：三个节点在同一浏览器里，是手动传播的独立快照，不是真实 P2P。固定难度、P-256 签名、完整交易摘要与费用账户是教学规则，不是完整 Bitcoin 实现。旧 Python 源码依赖及规则尚未完成本轮全面校订，不能据此声称它与新网页实现相同。
+边界：三个节点在同一浏览器里，是手动传播的独立快照，不是真实 P2P。固定难度、P-256 签名、完整交易摘要与费用账户是教学规则，不是完整 Bitcoin 实现。
 
-以下保留 Daniel van Flymen 上游 README 与原有来源链接。许可见本目录 LICENSE 与根目录 THIRD_PARTY.md。
+## 对应的 Python 练习（推荐）
+
+新版 `verified_network.py` 和 `scripts/05-verified-reorg.py` 不启动服务；它们重现网页主线的检查顺序与余额结果。需要 Python 3.10+。Python 复用 Day 3 的 **secp256k1** 签名，而网页使用 **P-256**，两者交易编码、区块哈希和签名不能互换。在本目录执行：
+
+```powershell
+python -m pip install -r requirements-learning.txt
+python -X utf8 scripts/05-verified-reorg.py
+```
+
+在项目根目录执行行为测试：
+
+```powershell
+python -X utf8 -m unittest discover -s tests -p "test_day2_source.py"
+```
+
+| 学习问题 | 新版网页 / Python 练习 | 保留的上游 `blockchain.py` |
+| --- | --- | --- |
+| 收到交易 | 节点独立待确认池，接收不扣款，池内冲突先到先留 | `current_transactions` 是本节点待打包列表，无签名或冲突检查 |
+| 交易授权与守恒 | 验签、UTXO 所有者、未花费、正额与费用分别校验 | 接收任意 `sender` / `amount`，不检查资产来源 |
+| 区块校验 | 链接、哈希、固定 PoW、完整签名摘要和逐块 UTXO 重放 | 检查相邻链接与简化 PoW，未校验交易账本 |
+| 分叉选择 | 等有效工作保留原链；更多有效工作才切换 | 比较长度；旧规则不能判断交易有效性 |
+| 重组 | 从共同初始 UTXO 重放新链、替换费用；孤立交易重检 | 替换链列表，不重算余额或待处理交易 |
+
+动手试验：先预测 A/C 等工作时是否换链，再让 C 挖空块；核对 Bob 95→50、Eve 0→45、Alice 54、费用仍为 1。接着在练习副本里让 Eve 签 Alice 的输入，即使多挖两块也应被拒绝。最后用 Alice 的另一笔 30 产生独立交易，观察它从被撤下的区块恢复为待确认，而与 Y 冲突的 X 不能恢复。测试分别覆盖这些边界。
+
+## 上游 Flask 示例（历史对照）
+
+上游 `blockchain.py` 可用现代依赖在本机学习接口；已补空 JSON、空链、损坏同伴链、无效节点地址和不可达节点处理，服务器默认只监听 `127.0.0.1`。下面原始 `requirements.txt` 与 `Pipfile` 保留当年的版本，**不建议在当前 Python 上安装**。若要运行，使用上面的 `requirements-learning.txt` 后执行 `python blockchain.py --port 5001`，关闭终端即停止。Dockerfile 已改为 Python 3.12 与现代学习依赖；容器内监听 `0.0.0.0` 才能由宿主机访问。它没有钱包、签名、UTXO 或有效账本选链；不得连真实资产，也不要把它暴露到公网。
+
+以下保留 Daniel van Flymen 上游 README 原文与来源链接作历史资料，其中安装命令反映原始环境；Dockerfile 和服务入口已做上述兼容修复。许可见本目录 LICENSE 与根目录 THIRD_PARTY.md。
 
 # Are you looking for the source code for my book?
 

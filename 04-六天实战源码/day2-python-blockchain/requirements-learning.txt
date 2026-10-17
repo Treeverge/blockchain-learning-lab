@@ -1,0 +1,5 @@
+# Modern dependencies for locally reading the preserved Flask tutorial.
+# The new no-server reorganization exercise also needs Day 3's cryptography.
+Flask>=3.0,<4
+requests>=2.31,<3
+cryptography>=38,<49
