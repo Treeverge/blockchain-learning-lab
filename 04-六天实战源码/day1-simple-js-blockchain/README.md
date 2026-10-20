@@ -12,7 +12,9 @@
 node --test tests/chain.test.cjs
 ```
 
-新版模型见 `../../assets/js/chain.js`。下方保留原上游介绍与运行步骤；原 `src/lib.js` 和扩展脚本使用不同的教学哈希/证明约定，不应与新版模型混用。旧依赖与旧脚本尚未完成本轮全面验证。
+新版模型见 `../../assets/js/chain.js`。[逐项规则对照](../../docs/day1-legacy-audit.md)列出了上游 `src/lib.js`、扩展脚本和新版网页各自哈希、挖矿及验链的范围。旧版 `hashBlock` 不含 nonce；其挖矿证明另算，所以旧快照里的区块哈希不一定以 `0` 开头。不要将旧对象与新版验链器混用。
+
+下方保留上游介绍与原运行步骤，供阅读历史实现。旧 Babel / Flow / Jest 依赖及九个扩展脚本尚未在本轮逐一运行验收；学习本章优先使用上面的网页与 Node 内置测试器，无需安装旧依赖。
 
 ## 保留的上游项目：Simple JS Blockchain
 
@@ -20,7 +22,7 @@ This is based on a [blog post](https://kndrck.co/building-a-minimal-blockchain-i
 
 The original post used Haskell (which I am a fan of), but I am nevertheless most comfortable with Javascript. A lot of blog posts about tiny blockchains in Javascript used ES2015 classes and I wanted to see if we could simply use Flow types instead.
 
-# Running It
+### 上游原始运行步骤（历史参考，未在当前环境验收）
 
 1. Clone the repo.
 2. Run `yarn` (or `npm install`) to install dependencies.
